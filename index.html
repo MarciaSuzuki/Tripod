@@ -1,0 +1,243 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Language Archive Collector — MVP</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <header class="app-header">
+    <div class="branding">
+      <h1>Language Archive Collector</h1>
+      <p class="tagline">Tripod LA Tagger + Collector • Offline-ready MVP</p>
+    </div>
+    <div class="toolbar">
+      <button id="btnNewEntry" class="primary">New Entry</button>
+      <button id="btnSaveEntry" class="primary">Save Entry</button>
+      <button id="btnRunQC">Run QC Checks</button>
+      <button id="btnExportJSON">Export Entry (JSON)</button>
+      <label class="import-label">
+        Import Entry (JSON)
+        <input type="file" id="importFile" accept="application/json">
+      </label>
+      <button id="btnClearForm" class="danger">Clear Form</button>
+    </div>
+  </header>
+
+  <section class="searchbar">
+    <input id="searchInput" type="search" placeholder="Search entries by ID, language, speaker, collector, genre, or transcript text…" aria-label="Search entries">
+    <button id="btnSearch">Search</button>
+    <div id="searchResults" class="search-results" aria-live="polite"></div>
+  </section>
+
+  <main class="layout">
+    <section class="panel left">
+      <h2>1) Entry & Language Metadata</h2>
+      <div class="field-row">
+        <label>Entry ID</label>
+        <input id="entryId" type="text" placeholder="Auto-generated (click to regenerate)" title="Entry ID">
+        <button id="btnGenId" class="small">Generate ID</button>
+      </div>
+      <div class="field-row">
+        <label>Created At</label>
+        <input id="createdAt" type="text" readonly>
+      </div>
+      <div class="grid-3">
+        <div class="field">
+          <label>Language Name<span class="req">*</span></label>
+          <input id="langName" type="text" placeholder="e.g., Kambaata">
+        </div>
+        <div class="field">
+          <label>ISO 639‑3 Code<span class="req">*</span></label>
+          <input id="langCode" type="text" placeholder="e.g., kbp">
+        </div>
+        <div class="field">
+          <label>Dialect / Variety<span class="req">*</span></label>
+          <input id="langDialect" type="text" placeholder="e.g., North Valley">
+        </div>
+      </div>
+
+      <div class="grid-3">
+        <div class="field">
+          <label>Genre<span class="req">*</span></label>
+          <select id="genre">
+            <option value="">— Select —</option>
+            <option>narrative</option>
+            <option>song/hymn</option>
+            <option>lament</option>
+            <option>proverb</option>
+            <option>procedural/instruction</option>
+            <option>law/procedural</option>
+            <option>genealogy/list</option>
+            <option>prayer</option>
+            <option>blessing/curse</option>
+            <option>teaching/discourse</option>
+            <option>disputation</option>
+          </select>
+        </div>
+        <div class="field">
+          <label>Register<span class="req">*</span></label>
+          <select id="register">
+            <option value="">— Select —</option>
+            <option>conversational</option>
+            <option>ceremonial</option>
+            <option>public address</option>
+            <option>legal</option>
+            <option>didactic</option>
+          </select>
+        </div>
+        <div class="field">
+          <label>Style<span class="req">*</span></label>
+          <select id="style">
+            <option value="">— Select —</option>
+            <option>solemn</option>
+            <option>urgent</option>
+            <option>legalistic</option>
+            <option>direct</option>
+            <option>reflective</option>
+          </select>
+        </div>
+      </div>
+
+      <h3>2) Performance Context</h3>
+      <div class="grid-3">
+        <div class="field">
+          <label>Setting</label>
+          <select id="setting">
+            <option value="">— Select —</option>
+            <option>casual</option>
+            <option>ceremonial</option>
+          </select>
+        </div>
+        <div class="field">
+          <label>Audience</label>
+          <select id="audience">
+            <option value="">— Select —</option>
+            <option>children</option>
+            <option>youth</option>
+            <option>adults</option>
+            <option>mixed</option>
+          </select>
+        </div>
+        <div class="field">
+          <label>Participation</label>
+          <select id="participation">
+            <option value="">— Select —</option>
+            <option>solo</option>
+            <option>responsive</option>
+            <option>call-and-response</option>
+          </select>
+        </div>
+      </div>
+      <div class="field-row">
+        <label>Social Constraints / Notes</label>
+        <input id="socialConstraints" type="text" placeholder="e.g., honorifics for elders, purity rules, presence of a crowd">
+      </div>
+
+      <h3>3) Contributors & Consent</h3>
+      <div class="grid-2">
+        <div class="field">
+          <label>Speaker (pseudonym)</label>
+          <input id="speakerName" type="text" placeholder="e.g., Amina">
+        </div>
+        <div class="field">
+          <label>Speaker Profile</label>
+          <input id="speakerProfile" type="text" placeholder="e.g., F, 50s, central region">
+        </div>
+      </div>
+      <div class="grid-2">
+        <div class="field">
+          <label>Collector</label>
+          <input id="collector" type="text" placeholder="Your name / team">
+        </div>
+        <div class="field">
+          <label>Consent Level</label>
+          <select id="consent">
+            <option value="">— Select —</option>
+            <option>public</option>
+            <option>project-internal</option>
+            <option>team-only</option>
+          </select>
+        </div>
+      </div>
+
+      <h2>4) Audio Capture</h2>
+      <div class="recorder">
+        <div class="record-controls">
+          <button id="btnStartRec" class="record">● Start</button>
+          <button id="btnPauseRec" disabled>Pause</button>
+          <button id="btnResumeRec" disabled>Resume</button>
+          <button id="btnStopRec" disabled>■ Stop</button>
+          <span id="recTimer" class="timer">00:00</span>
+        </div>
+        <div class="audio-preview">
+          <audio id="audioPlayer" controls></audio>
+        </div>
+        <div class="attach">
+          <button id="btnAttachAudio" disabled>Attach to Entry</button>
+          <label class="import-label small">
+            Or upload audio
+            <input type="file" id="audioUpload" accept="audio/*">
+          </label>
+        </div>
+        <div class="hint">If your browser blocks recording, use “Upload audio”.</div>
+      </div>
+    </section>
+
+    <section class="panel right">
+      <h2>5) Transcript & Tagging</h2>
+      <div class="field-row">
+        <label>Transcript (click and type; select text to tag)</label>
+      </div>
+      <div id="transcript" class="transcript" contenteditable="true" aria-label="Transcript editor"></div>
+
+      <div class="tagging-tools">
+        <div class="grid-2">
+          <div>
+            <label for="markerSelect">Add Marker to Selection</label>
+            <select id="markerSelect">
+              <!-- options inserted by JS -->
+            </select>
+            <button id="btnAddMarker">Tag Selection</button>
+            <button id="btnClearMarkers" class="danger">Clear All Markers</button>
+          </div>
+          <div>
+            <label for="profileSelect">Select Profile (bundle)</label>
+            <select id="profileSelect">
+              <!-- options inserted by JS -->
+            </select>
+            <button id="btnApplyProfile">Apply Profile Tags</button>
+          </div>
+        </div>
+      </div>
+
+      <details class="glossary">
+        <summary>Marker Glossary</summary>
+        <div class="glossary-controls">
+          <input id="glossarySearch" type="search" placeholder="Filter markers…">
+        </div>
+        <div id="glossaryList" class="glossary-list" aria-live="polite"></div>
+      </details>
+
+      <h2>6) QC Checks</h2>
+      <div id="qcPanel" class="qc-panel">
+        <p class="muted">Click “Run QC Checks” in the toolbar to evaluate this entry.</p>
+      </div>
+    </section>
+  </main>
+
+  <footer class="app-footer">
+    <div>
+      <strong>Notes:</strong> This MVP stores entries locally in your browser using IndexedDB. Export often.
+    </div>
+    <div class="refs">
+      <small>
+        Marker families, profiles, and validation ideas follow the Translation Tripod Language Archive spec (light, function-first markers; profiles; consent; QC gates).
+      </small>
+    </div>
+  </footer>
+
+  <script src="app.js"></script>
+</body>
+</html>
