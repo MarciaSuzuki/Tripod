@@ -1,22 +1,29 @@
-# Language Archive Collector — Accordion MVP
+# Language Archive Collector — Accordion + Waveform + Theme
 
-This build makes the UI calm and focused: each major section (1–6) is a collapsible accordion. Only one section is open at a time (you can also Expand all / Collapse all). The app remembers the last section you had open.
+This build adds:
+- **Dual-open** behavior so sections **4) Audio** and **5) Transcript** can be open **at the same time** (you can listen, pause, and transcribe).
+- **Dark/Light theme toggle** (saved in the browser).
+- **Waveform view and trim editing** (client-side, no libraries). Draw waveform, select a region, **Trim to Selection (Replace)** or **Download WAV (Selection)**.
+- **Playback speed slider** (0.5×–1.5×) next to the audio player.
+- **Logo** placed in the header.
 
-## What’s included
-- **Sections 1–6 as accordions** with mutual exclusivity and state memory.
-- **Audio**: record (MediaRecorder) or upload; attach to entry; playback.
-- **Transcript & Tagging**: select text, choose a marker, **Tag Selection**. The marker id shows next to the highlight.
-- **Profiles**: pick a profile to see its marker set and add a note; QC checks for profile coverage.
-- **QC Checks**: one-click checks with hints; automatically opens the QC section.
-- **Search**: by ID, language name/code/dialect, speaker, collector, genre, or transcript text.
-- **Local save**: IndexedDB; **Export/Import JSON** (packs audio if small).
-- **Consent**: public / project-internal / team-only.
+Everything else remains: audio record/upload, tagging with visible marker labels, profiles, QC, search, Entry ID, language code/dialect, consent, local save (IndexedDB), export/import JSON.
 
-## How to use
-1) Open `index.html` in Chrome/Edge/Firefox (or deploy to your Pages site).  
-2) New Entry → fill section **1**, then open **2**, **3**… one at a time.  
-3) In **5**, type the transcript, select a span → choose a marker → **Tag Selection**.  
-4) **Run QC Checks** → fix any FAIL items → **Save Entry**.  
-5) Use **Search** to find and **Load** entries you’ve saved locally.
+## How to use the waveform
+1) Record or Upload audio → click **Show Waveform** (or it draws automatically on new audio).  
+2) **Drag on the waveform** to select a region (see the Selection times).  
+3) **Trim to Selection (Replace)** to make that the new attached audio, or **Download WAV (Selection)** to save the selection as a file.  
+4) Use **Zoom + / Zoom −** if you need more precision.  
+5) If decode fails in your browser for certain codecs, you can still play and attach the audio; waveform may not be available for that file type.
 
-This UI follows the Tripod’s Language Archive guidance: **light, function-first markers** and **profiles** that bundle common patterns by genre/register. See the manuscript for rationale. 
+## Theme
+- Toggle with the moon/sun button. Persisted in localStorage.  
+- You can set the default theme by changing `data-theme` on the `<html>` element in `index.html`.
+
+## Deploy
+- Replace the files in your GitHub Pages repo (root or `/docs`).  
+- Hard refresh your site.
+
+---
+
+This app follows the Tripod’s **Language Archive** guidance: light, function-first markers and genre/register profiles, with evidence captured DU-by-DU for auditability. 

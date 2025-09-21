@@ -1,18 +1,22 @@
 <!doctype html>
-<html lang="en">
+<html lang="en" data-theme="dark">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Language Archive Collector — Accordion MVP</title>
+  <title>Language Archive Collector — Accordion + Waveform</title>
   <link rel="stylesheet" href="styles.css">
 </head>
 <body>
 <header class="app-header">
   <div class="branding">
-    <h1>Language Archive Collector</h1>
-    <p class="tagline">Tripod LA Tagger + Collector • Focused, one activity at a time</p>
+    <img src="logo.png" alt="Language Archive logo" class="logo">
+    <div>
+      <h1>Language Archive Collector</h1>
+      <p class="tagline">Tripod LA Tagger + Collector • Focused, one activity at a time</p>
+    </div>
   </div>
   <div class="toolbar">
+    <button id="btnTheme" class="ghost" title="Toggle dark/light theme">🌙</button>
     <button id="btnNewEntry" class="primary">New Entry</button>
     <button id="btnSaveEntry" class="primary">Save Entry</button>
     <button id="btnRunQC">Run QC Checks</button>
@@ -193,6 +197,10 @@
         </div>
         <div class="audio-preview">
           <audio id="audioPlayer" controls></audio>
+          <div class="playback-tools">
+            <label>Speed <input id="playbackRate" type="range" min="0.5" max="1.5" step="0.05" value="1"></label>
+            <span id="playbackRateVal">1.00×</span>
+          </div>
         </div>
         <div class="attach">
           <button id="btnAttachAudio" disabled>Attach to Entry</button>
@@ -202,6 +210,22 @@
           </label>
         </div>
         <div class="hint">If your browser blocks recording, use “Upload audio”.</div>
+      </div>
+
+      <div class="waveform card-lite">
+        <div class="wave-toolbar">
+          <button id="btnShowWave">Show Waveform</button>
+          <button id="btnZoomIn">Zoom +</button>
+          <button id="btnZoomOut">Zoom −</button>
+          <button id="btnClearSel">Clear Selection</button>
+          <button id="btnTrimApply" class="danger">Trim to Selection (Replace)</button>
+          <button id="btnDownloadSel">Download WAV (Selection)</button>
+        </div>
+        <canvas id="waveCanvas" width="900" height="140" aria-label="Audio waveform"></canvas>
+        <div class="wave-meta">
+          <div>Selection: <span id="selStart">0.000</span>s – <span id="selEnd">0.000</span>s</div>
+          <div>Duration: <span id="audDur">0.000</span>s • Zoom: <span id="zoomVal">1.0</span>×</div>
+        </div>
       </div>
     </div>
   </details>
@@ -251,7 +275,7 @@
 </main>
 
 <footer class="app-footer">
-  <div><strong>Notes:</strong> Entries are saved locally (IndexedDB). Export JSON often.</div>
+  <div><strong>Notes:</strong> Entries are saved locally (IndexedDB). Export JSON often. — Theme: <span id="themeLabel">dark</span></div>
 </footer>
 
 <script src="app.js"></script>
