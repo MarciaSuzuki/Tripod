@@ -1,5 +1,5 @@
-// Language Archive Collector — Adds total clock + progress bar (100h goal) and CSV export of sentences
-// Keeps: Ideas-first flow, dual-open sections 2 & 3, waveform editing, theme toggle, logo, search, QC, JSON export/import.
+// Language Archive Collector — Header minimal buttons, footer toolbar, org text
+// Also retains: total clock + progress bar (100h goal), CSV export of sentences, ideas-first flow, waveform edit.
 
 const MARKERS = [
   { id: "LA:BG_opener_past", label: "Background opener ( past )", description: "Conventional background/opening frame for past-time narration." },
@@ -101,16 +101,16 @@ const safeKey = g => g.replace(/[^a-z0-9]+/gi,'_');
   const key="la_theme"; const root=document.documentElement;
   const saved=localStorage.getItem(key)||"dark";
   root.setAttribute("data-theme", saved);
-  byId("themeLabel").textContent = saved;
   const btn = byId("btnTheme");
-  btn.textContent = saved==="dark" ? "🌙" : "☀️";
-  btn.addEventListener("click", ()=>{
-    const cur = root.getAttribute("data-theme")==="dark" ? "light" : "dark";
-    root.setAttribute("data-theme", cur);
-    localStorage.setItem(key, cur);
-    byId("themeLabel").textContent = cur;
-    btn.textContent = cur==="dark" ? "🌙" : "☀️";
-  });
+  if (btn) {
+    btn.textContent = saved==="dark" ? "🌙" : "☀️";
+    btn.addEventListener("click", ()=>{
+      const cur = root.getAttribute("data-theme")==="dark" ? "light" : "dark";
+      root.setAttribute("data-theme", cur);
+      localStorage.setItem(key, cur);
+      btn.textContent = cur==="dark" ? "🌙" : "☀️";
+    });
+  }
 })();
 
 // --- Accordion (allow both Sections 2 & 3 open together) ---
@@ -233,10 +233,9 @@ function updateGoalProgress(totalSec){
   const totalClock = byId("totalClock");
   const bar = byId("progressBar");
   const wrap = document.querySelector(".progress-wrap");
-  totalClock.textContent = toHMS(totalSec);
-  const pct = Math.min(100, (totalSec/GOAL_SEC)*100);
-  bar.style.width = pct.toFixed(1)+"%";
-  wrap.setAttribute("aria-valuenow", String(Math.floor(totalSec)));
+  if (totalClock) totalClock.textContent = toHMS(totalSec);
+  if (bar) bar.style.width = Math.min(100, (totalSec/GOAL_SEC)*100).toFixed(1)+"%";
+  if (wrap) wrap.setAttribute("aria-valuenow", String(Math.floor(totalSec)));
 }
 
 // --- Glossary ---
@@ -645,8 +644,9 @@ byId("btnSaveEntry").addEventListener("click", async ()=>{
     recalcGenreClocks(); // update per-genre and total progress
   }catch(err){ alert("Save failed: "+err); }
 });
-byId("btnRunQC").addEventListener("click", runQC);
-byId("btnExportJSON").addEventListener("click", async ()=>{
+const btnRunQC = byId("btnRunQC"); if (btnRunQC) btnRunQC.addEventListener("click", runQC);
+
+const btnExportJSON = byId("btnExportJSON"); if (btnExportJSON) btnExportJSON.addEventListener("click", async ()=>{
   const e = readEntryFromUI();
   const pkg = { entry: e };
   if(lastAudioBlob && lastAudioBlob.size < 20*1024*1024){
@@ -658,8 +658,7 @@ byId("btnExportJSON").addEventListener("click", async ()=>{
   const url = URL.createObjectURL(blob); const a = document.createElement("a"); a.href=url; a.download=`${e.entryId||"entry"}.json`; a.click(); URL.revokeObjectURL(url);
 });
 
-// --- CSV Export of sentences ---
-byId("btnExportCSV").addEventListener("click", ()=>{
+const btnExportCSV = byId("btnExportCSV"); if (btnExportCSV) btnExportCSV.addEventListener("click", ()=>{
   const csv = buildTranscriptCSV();
   if (!csv){ alert("Nothing to export. Add a transcript first."); return; }
   const id = (byId("entryId").value||"entry").trim() || "entry";
@@ -745,7 +744,8 @@ function segmentSentences(text){
 }
 
 // Import / Clear / Search
-byId("importFile").addEventListener("change", async e=>{
+const importFile = byId("importFile");
+if (importFile) importFile.addEventListener("change", async e=>{
   const f=e.target.files?.[0]; if(!f) return;
   try{
     const pkg = JSON.parse(await f.text()); const entry = pkg.entry || pkg;
@@ -758,7 +758,7 @@ byId("importFile").addEventListener("change", async e=>{
     recalcGenreClocks();
   }catch(err){ alert("Import failed: "+err); }
 });
-byId("btnClearForm").addEventListener("click", ()=>{ if(confirm("Clear the form? Unsaved changes will be lost.")){ writeEntryToUI(blankEntry()); clearWaveform(); }});
+const btnClear = byId("btnClearForm"); if (btnClear) btnClear.addEventListener("click", ()=>{ if(confirm("Clear the form? Unsaved changes will be lost.")){ writeEntryToUI(blankEntry()); clearWaveform(); }});
 
 byId("btnSearch").addEventListener("click", async ()=>{
   const q = byId("searchInput").value;

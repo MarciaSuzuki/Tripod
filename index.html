@@ -15,31 +15,23 @@
       <p class="tagline">Tripod: Meaning Based AI-Assisted OBT</p>
     </div>
   </div>
-  <div class="toolbar">
-    <button id="btnTheme" class="ghost" title="Toggle dark/light theme">🌙</button>
+
+  <div class="goal-inline">
+    <div class="goalline">
+      <span>Total collected:</span>
+      <strong id="totalClock">00:00:00</strong>
+      <span class="muted">/ 100:00:00 goal</span>
+    </div>
+    <div class="progress-wrap" role="progressbar" aria-valuemin="0" aria-valuemax="360000" aria-valuenow="0" aria-label="Hours collected towards 100h goal">
+      <div id="progressBar" class="progress-bar" style="width:0%"></div>
+    </div>
+  </div>
+
+  <div class="toolbar header-only">
     <button id="btnNewEntry" class="primary">New Entry</button>
     <button id="btnSaveEntry" class="primary">Save Entry</button>
-    <button id="btnRunQC">Run QC Checks</button>
-    <button id="btnExportJSON">Export Entry (JSON)</button>
-    <button id="btnExportCSV">Export Transcript (CSV)</button>
-    <label class="import-label">
-      Import Entry (JSON)
-      <input type="file" id="importFile" accept="application/json">
-    </label>
-    <button id="btnClearForm" class="danger">Clear Form</button>
   </div>
 </header>
-
-<section class="goalbar">
-  <div class="goalline">
-    <span>Total collected:</span>
-    <strong id="totalClock">00:00:00</strong>
-    <span class="muted">/ 100:00:00 goal</span>
-  </div>
-  <div class="progress-wrap" role="progressbar" aria-valuemin="0" aria-valuemax="360000" aria-valuenow="0" aria-label="Hours collected towards 100h goal">
-    <div id="progressBar" class="progress-bar" style="width:0%"></div>
-  </div>
-</section>
 
 <section class="searchbar">
   <input id="searchInput" type="search" placeholder="Search entries by ID, language, speaker, collector, genre, or transcript text…" aria-label="Search entries">
@@ -294,14 +286,27 @@
     <summary><span>7) QC Checks</span></summary>
     <div class="content">
       <div id="qcPanel" class="qc-panel">
-        <p class="muted">Click “Run QC Checks” in the top toolbar to evaluate this entry.</p>
+        <p class="muted">Click “Run QC Checks” in the footer to evaluate this entry.</p>
       </div>
     </div>
   </details>
 </main>
 
 <footer class="app-footer">
-  <div><strong>Notes:</strong> Entries are saved locally (IndexedDB). Export JSON/CSV often. — Theme: <span id="themeLabel">dark</span></div>
+  <div class="org">
+    Shema Bible Translation, University of the Nations. YWAM Kansas City.
+  </div>
+  <div class="footer-toolbar">
+    <button id="btnTheme" class="ghost" title="Toggle dark/light theme">🌙</button>
+    <button id="btnRunQC">Run QC Checks</button>
+    <button id="btnExportJSON">Export Entry (JSON)</button>
+    <button id="btnExportCSV">Export Transcript (CSV)</button>
+    <label class="import-label">
+      Import Entry (JSON)
+      <input type="file" id="importFile" accept="application/json">
+    </label>
+    <button id="btnClearForm" class="danger">Clear Form</button>
+  </div>
 </footer>
 
 <script src="app.js"></script>
