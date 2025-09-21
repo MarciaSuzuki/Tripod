@@ -11,7 +11,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;700&display=swap" rel="stylesheet">
 
-  <link rel="stylesheet" href="styles.css" />
+  <link rel="stylesheet" href="./styles.css" />
 </head>
 <body>
   <!-- Masthead -->
@@ -157,9 +157,8 @@
       </div>
     </section>
 
-    <!-- 4+5 in a flex grid; they are the only panes allowed to stay open together -->
+    <!-- 4+5 in a flex grid; only these can stay open together -->
     <div class="pane-flex">
-      <!-- 4) Transcription & Tagging (collapsed by default) -->
       <section class="pane" data-pane="transcript">
         <button class="pane-head" aria-expanded="false">
           <span>4) Transcription &amp; Tagging</span><span class="chev">▸</span>
@@ -183,7 +182,6 @@
         </div>
       </section>
 
-      <!-- 5) Audio (mini) (collapsed by default) -->
       <section class="pane" data-pane="audioSide">
         <button class="pane-head" aria-expanded="false">
           <span>5) Audio</span><span class="chev">▸</span>
@@ -231,6 +229,7 @@
     </div>
   </footer>
 
-  <script src="app.js"></script>
+  <!-- Defer ensures DOM is parsed before JS runs on GitHub Pages -->
+  <script src="./app.js" defer></script>
 </body>
 </html>
