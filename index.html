@@ -1,314 +1,224 @@
-<!doctype html>
-<html lang="en" data-theme="dark">
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
 <head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Language Archive Collector — Ideas First</title>
-  <link rel="stylesheet" href="styles.css">
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Tripod: Meaning Based AI‑Assisted OBT — Language Archive Collector (MVP)</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css" />
 </head>
 <body>
-<header class="app-header">
-  <div class="branding">
-    <img src="logo.png" alt="Language Archive logo" class="logo">
-    <div>
-      <h1>Language Archive Collector</h1>
-      <p class="tagline">Tripod: Meaning Based AI-Assisted OBT</p>
-    </div>
-  </div>
-
-  <div class="goal-inline">
-    <div class="goalline">
-      <span>Total collected:</span>
-      <strong id="totalClock">00:00:00</strong>
-      <span class="muted">/ 100:00:00 goal</span>
-    </div>
-    <div class="progress-wrap" role="progressbar" aria-valuemin="0" aria-valuemax="360000" aria-valuenow="0" aria-label="Hours collected towards 100h goal">
-      <div id="progressBar" class="progress-bar" style="width:0%"></div>
-    </div>
-  </div>
-
-  <div class="toolbar header-only">
-    <button id="btnNewEntry" class="primary">New Entry</button>
-    <button id="btnSaveEntry" class="primary">Save Entry</button>
-  </div>
-</header>
-
-<section class="searchbar">
-  <input id="searchInput" type="search" placeholder="Search entries by ID, language, speaker, collector, genre, or transcript text…" aria-label="Search entries">
-  <button id="btnSearch">Search</button>
-  <div class="search-actions">
-    <button id="btnExpandAll" class="ghost">Expand all</button>
-    <button id="btnCollapseAll" class="ghost">Collapse all</button>
-  </div>
-  <div id="searchResults" class="search-results" aria-live="polite"></div>
-</section>
-
-<main class="stack">
-  <!-- 1 -->
-  <details class="card accordion" data-key="sec1" open>
-    <summary><span>1) Ideas & Themes</span></summary>
-    <div class="content">
-      <p class="muted">Pick a <strong>genre</strong> and an <strong>idea/prompt</strong> to elicit a natural story. Then click <em>Start with this prompt</em> to jump to Audio Capture. Clocks show total recorded hours per genre from your local archive.</p>
-      <div class="ideas-toolbar">
-        <button id="btnRecalcClocks" class="ghost">Refresh Clocks</button>
+  <!-- Masthead: title + subtitle (always on top on desktop & phone) -->
+  <div id="masthead" role="banner" aria-label="App title">
+    <div class="masthead-inner">
+      <img src="assets/logo.png" alt="Tripod logo" class="logo" />
+      <div class="titles">
+        <h1 class="app-title">Tripod: Meaning Based AI‑Assisted OBT</h1>
+        <p class="app-subtitle">Language Archive Collector • MVP</p>
       </div>
-      <div id="ideasList" class="ideas-list" aria-live="polite"></div>
-      <p class="muted small">Tip: You can always switch prompts or record multiple short clips for the same idea.</p>
     </div>
-  </details>
+  </div>
 
-  <!-- 2 -->
-  <details class="card accordion" data-key="sec2">
-    <summary><span>2) Audio Capture</span></summary>
-    <div class="content">
-      <div class="idea-current muted">Theme: <span id="currentIdeaGenre">—</span> • Prompt: <span id="currentIdeaPrompt">—</span></div>
-      <div class="recorder">
-        <div class="record-controls">
-          <button id="btnStartRec" class="record">● Start</button>
-          <button id="btnPauseRec" disabled>Pause</button>
-          <button id="btnResumeRec" disabled>Resume</button>
-          <button id="btnStopRec" disabled>■ Stop</button>
-          <span id="recTimer" class="timer">00:00</span>
+  <!-- Primary header: sticky; minimal controls per your spec -->
+  <header id="app-header" role="toolbar" aria-label="Primary controls">
+    <div class="header-inner">
+      <div class="meta-block">
+        <div class="clock-wrap">
+          <span id="totalHours" class="clock">0h 00m</span>
+          <span class="goal">/ 100h goal</span>
         </div>
-        <div class="audio-preview">
-          <audio id="audioPlayer" controls></audio>
-          <div class="playback-tools">
-            <label>Speed <input id="playbackRate" type="range" min="0.5" max="1.5" step="0.05" value="1"></label>
-            <span id="playbackRateVal">1.00×</span>
+        <div class="progress">
+          <div id="progressFill" class="progress-fill" style="width:0%"></div>
+        </div>
+      </div>
+      <div class="header-actions">
+        <button id="newEntryBtn" class="btn primary">New Entry</button>
+        <button id="saveEntryBtn" class="btn outline">Save Entry</button>
+      </div>
+    </div>
+  </header>
+
+  <!-- Sticky section controls (search + expand/collapse) touching header -->
+  <div id="section-toolbar" role="region" aria-label="Section utilities">
+    <div class="toolbar-inner">
+      <div class="search-group">
+        <input id="searchInput" type="search" placeholder="Search entries, tags, notes…" aria-label="Search" />
+        <button id="clearSearchBtn" class="btn subtle" title="Clear search">Clear</button>
+      </div>
+      <div class="section-toggles">
+        <button id="expandAllBtn" class="btn subtle">Expand all</button>
+        <button id="collapseAllBtn" class="btn subtle">Collapse all</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Main content -->
+  <main id="content">
+    <!-- Section 1: Ideas & Themes -->
+    <section class="pane" data-pane="ideas">
+      <button class="pane-head" aria-expanded="true">
+        <span>1) Ideas &amp; Themes</span>
+        <span class="chev">▾</span>
+      </button>
+      <div class="pane-body">
+        <div class="ideas-grid">
+          <aside class="genres">
+            <h3>Genres (with hours)</h3>
+            <ul id="genreList" class="genre-list" aria-live="polite">
+              <!-- Populated by JS -->
+            </ul>
+          </aside>
+          <div class="ideas-content">
+            <div class="field-row">
+              <label for="genreSelect">Select genre</label>
+              <select id="genreSelect"></select>
+            </div>
+            <div class="field-row">
+              <label for="promptSelect">Pick an idea / prompt</label>
+              <select id="promptSelect"></select>
+            </div>
+            <button id="startWithPromptBtn" class="btn primary">Start with this prompt → Audio Capture</button>
           </div>
         </div>
-        <div class="attach">
-          <button id="btnAttachAudio" disabled>Attach to Entry</button>
-          <label class="import-label small">
-            Or upload audio
-            <input type="file" id="audioUpload" accept="audio/*">
-          </label>
-        </div>
-        <div class="hint">If your browser blocks recording, use “Upload audio”.</div>
       </div>
+    </section>
 
-      <div class="waveform card-lite">
-        <div class="wave-toolbar">
-          <button id="btnShowWave">Show Waveform</button>
-          <button id="btnZoomIn">Zoom +</button>
-          <button id="btnZoomOut">Zoom −</button>
-          <button id="btnClearSel">Clear Selection</button>
-          <button id="btnTrimApply" class="danger">Trim to Selection (Replace)</button>
-          <button id="btnDownloadSel">Download WAV (Selection)</button>
+    <!-- Section 2: Audio Capture -->
+    <section class="pane" data-pane="audio">
+      <button class="pane-head" aria-expanded="true">
+        <span>2) Audio Capture</span><span class="chev">▾</span>
+      </button>
+      <div class="pane-body">
+        <div class="audio-controls">
+          <button id="recordBtn" class="btn primary">● Record</button>
+          <button id="pauseBtn" class="btn">Pause</button>
+          <button id="resumeBtn" class="btn">Resume</button>
+          <button id="stopBtn" class="btn danger">■ Stop</button>
+          <input id="audioTitle" class="input" placeholder="Clip title (optional)" />
+          <a id="downloadClip" class="btn outline" download="clip.webm" aria-disabled="true">Download</a>
         </div>
-        <canvas id="waveCanvas" width="900" height="140" aria-label="Audio waveform"></canvas>
-        <div class="wave-meta">
-          <div>Selection: <span id="selStart">0.000</span>s – <span id="selEnd">0.000</span>s</div>
-          <div>Duration: <span id="audDur">0.000</span>s • Zoom: <span id="zoomVal">1.0</span>×</div>
+        <canvas id="waveform" height="84" aria-label="Waveform"></canvas>
+        <div class="trim-controls">
+          <label>Trim from (sec) <input id="trimStart" type="number" min="0" step="0.1" value="0"></label>
+          <label>to (sec) <input id="trimEnd" type="number" min="0" step="0.1" value="0"></label>
+          <button id="applyTrimBtn" class="btn">Apply trim</button>
+        </div>
+        <audio id="player" controls></audio>
+      </div>
+    </section>
+
+    <!-- Section 3: Entry / Language Metadata -->
+    <section class="pane" data-pane="meta">
+      <button class="pane-head" aria-expanded="false">
+        <span>3) Entry &amp; Language Metadata</span><span class="chev">▸</span>
+      </button>
+      <div class="pane-body">
+        <div class="grid-3">
+          <div class="field">
+            <label for="entryId">Entry ID</label>
+            <input id="entryId" placeholder="Auto or custom ID" />
+          </div>
+          <div class="field">
+            <label for="languageName">Language name</label>
+            <input id="languageName" placeholder="Name" />
+          </div>
+          <div class="field">
+            <label for="languageCode">Language code</label>
+            <input id="languageCode" placeholder="ISO / internal code" />
+          </div>
+          <div class="field">
+            <label for="dialect">Dialect</label>
+            <input id="dialect" placeholder="Dialect (optional)" />
+          </div>
+          <div class="field">
+            <label for="style">Style</label>
+            <input id="style" placeholder="e.g., conversational, ceremonial" />
+          </div>
+          <div class="field">
+            <label for="dateField">Date</label>
+            <input id="dateField" type="date" />
+          </div>
         </div>
       </div>
+    </section>
+
+    <!-- Section 4 & 5 openable side-by-side on larger screens -->
+    <div class="pane-flex">
+      <!-- Section 4: Transcription & Tagging -->
+      <section class="pane" data-pane="transcript">
+        <button class="pane-head" aria-expanded="true">
+          <span>4) Transcription &amp; Tagging</span><span class="chev">▾</span>
+        </button>
+        <div class="pane-body">
+          <div class="field-row">
+            <label for="markerSelect">Marker</label>
+            <select id="markerSelect"></select>
+            <button id="applyTagBtn" class="btn">Apply Tag</button>
+          </div>
+          <textarea id="transcript" rows="9" placeholder="Type the transcript here. Select text and Apply Tag."></textarea>
+          <div class="field-row">
+            <label for="notes">Notes</label>
+            <input id="notes" placeholder="Reviewer notes (optional)" />
+          </div>
+          <div class="export-row">
+            <button id="exportJsonBtn" class="btn outline">Export Entry (JSON)</button>
+            <button id="exportCsvBtn" class="btn outline">Export Transcript (CSV)</button>
+            <button id="importJsonBtn" class="btn">Import Entry (JSON)</button>
+          </div>
+        </div>
+      </section>
+
+      <!-- Section 5: Audio Capture (duplicate view to allow side-by-side) -->
+      <section class="pane" data-pane="audioSide">
+        <button class="pane-head" aria-expanded="true">
+          <span>5) Audio Capture (side)</span><span class="chev">▾</span>
+        </button>
+        <div class="pane-body">
+          <p class="muted">Use this mini player to listen while transcribing.</p>
+          <audio id="playerSide" controls></audio>
+          <div class="tiny-gap"></div>
+          <canvas id="waveformSide" height="64" aria-label="Waveform (side)"></canvas>
+        </div>
+      </section>
     </div>
-  </details>
 
-  <!-- 3 -->
-  <details class="card accordion" data-key="sec3">
-    <summary><span>3) Transcript & Tagging</span></summary>
-    <div class="content">
-      <div class="field-row">
-        <label>Transcript (click and type; select text to tag)</label>
-      </div>
-      <div id="transcript" class="transcript" contenteditable="true" aria-label="Transcript editor"></div>
-      <div class="tagging-tools">
+    <!-- Section 6: Marker Glossary, Profiles, QC -->
+    <section class="pane" data-pane="glossary">
+      <button class="pane-head" aria-expanded="false">
+        <span>6) Marker Glossary, Profiles &amp; QC</span><span class="chev">▸</span>
+      </button>
+      <div class="pane-body">
         <div class="grid-2">
           <div>
-            <label for="markerSelect">Add Marker to Selection</label>
-            <select id="markerSelect"></select>
-            <button id="btnAddMarker">Tag Selection</button>
-            <button id="btnClearMarkers" class="danger">Clear All Markers</button>
+            <h3>Marker Glossary</h3>
+            <ul id="glossaryList" class="glossary"></ul>
           </div>
           <div>
-            <label for="profileSelect">Select Profile (bundle)</label>
-            <select id="profileSelect"></select>
-            <button id="btnApplyProfile">Apply Profile Tags</button>
+            <h3>Run QC Checks</h3>
+            <button id="qcBtn" class="btn primary">Run QC</button>
+            <pre id="qcOutput" class="qc"></pre>
           </div>
         </div>
       </div>
-      <details class="glossary">
-        <summary>Marker Glossary</summary>
-        <div class="glossary-controls">
-          <input id="glossarySearch" type="search" placeholder="Filter markers…">
-        </div>
-        <div id="glossaryList" class="glossary-list" aria-live="polite"></div>
-      </details>
-    </div>
-  </details>
+    </section>
+  </main>
 
-  <!-- 4 -->
-  <details class="card accordion" data-key="sec4">
-    <summary><span>4) Entry & Language Metadata</span></summary>
-    <div class="content">
-      <div class="field-row">
-        <label>Entry ID</label>
-        <input id="entryId" type="text" placeholder="Auto-generated (click to regenerate)">
-        <button id="btnGenId" class="small">Generate ID</button>
+  <!-- Footer: sticky action bar -->
+  <footer id="app-footer" role="contentinfo">
+    <div class="footer-inner">
+      <div class="footer-actions">
+        <button id="themeToggle" class="btn">Dark / Light</button>
+        <button id="searchBtn" class="btn">Search</button>
+        <button id="clearFormBtn" class="btn danger">Clear Form</button>
       </div>
-      <div class="field-row">
-        <label>Created At</label>
-        <input id="createdAt" type="text" readonly>
-      </div>
-      <div class="grid-3">
-        <div class="field">
-          <label>Language Name<span class="req">*</span></label>
-          <input id="langName" type="text" placeholder="e.g., Kawéra">
-        </div>
-        <div class="field">
-          <label>ISO 639-3 Code<span class="req">*</span></label>
-          <input id="langCode" type="text" placeholder="e.g., xkw">
-        </div>
-        <div class="field">
-          <label>Dialect / Variety<span class="req">*</span></label>
-          <input id="langDialect" type="text" placeholder="e.g., Lower River">
-        </div>
-      </div>
-      <div class="grid-3">
-        <div class="field">
-          <label>Genre<span class="req">*</span></label>
-          <select id="genre">
-            <option value="">— Select —</option>
-            <option>narrative</option>
-            <option>song/hymn</option>
-            <option>lament</option>
-            <option>proverb</option>
-            <option>procedural/instruction</option>
-            <option>law/procedural</option>
-            <option>genealogy/list</option>
-            <option>prayer</option>
-            <option>blessing/curse</option>
-            <option>teaching/discourse</option>
-            <option>disputation</option>
-          </select>
-        </div>
-        <div class="field">
-          <label>Register<span class="req">*</span></label>
-          <select id="register">
-            <option value="">— Select —</option>
-            <option>conversational</option>
-            <option>ceremonial</option>
-            <option>public address</option>
-            <option>legal</option>
-            <option>didactic</option>
-          </select>
-        </div>
-        <div class="field">
-          <label>Style<span class="req">*</span></label>
-          <select id="style">
-            <option value="">— Select —</option>
-            <option>solemn</option>
-            <option>urgent</option>
-            <option>legalistic</option>
-            <option>direct</option>
-            <option>reflective</option>
-          </select>
-        </div>
+      <div class="org">
+        Shema Bible Translation, University of the Nations. YWAM Kansas City.
       </div>
     </div>
-  </details>
+  </footer>
 
-  <!-- 5 -->
-  <details class="card accordion" data-key="sec5">
-    <summary><span>5) Performance Context</span></summary>
-    <div class="content">
-      <div class="grid-3">
-        <div class="field">
-          <label>Setting</label>
-          <select id="setting">
-            <option value="">— Select —</option>
-            <option>casual</option>
-            <option>ceremonial</option>
-          </select>
-        </div>
-        <div class="field">
-          <label>Audience</label>
-          <select id="audience">
-            <option value="">— Select —</option>
-            <option>children</option>
-            <option>youth</option>
-            <option>adults</option>
-            <option>mixed</option>
-          </select>
-        </div>
-        <div class="field">
-          <label>Participation</label>
-          <select id="participation">
-            <option value="">— Select —</option>
-            <option>solo</option>
-            <option>responsive</option>
-            <option>call-and-response</option>
-          </select>
-        </div>
-      </div>
-      <div class="field-row">
-        <label>Social Constraints / Notes</label>
-        <input id="socialConstraints" type="text" placeholder="e.g., honorifics for elders; large crowd">
-      </div>
-    </div>
-  </details>
-
-  <!-- 6 -->
-  <details class="card accordion" data-key="sec6">
-    <summary><span>6) Contributors & Consent</span></summary>
-    <div class="content">
-      <div class="grid-2">
-        <div class="field">
-          <label>Speaker (pseudonym)</label>
-          <input id="speakerName" type="text" placeholder="e.g., Maya-K">
-        </div>
-        <div class="field">
-          <label>Speaker Profile</label>
-          <input id="speakerProfile" type="text" placeholder="e.g., F, ~62, respected grandmother">
-        </div>
-      </div>
-      <div class="grid-2">
-        <div class="field">
-          <label>Collector</label>
-          <input id="collector" type="text" placeholder="Your name / team">
-        </div>
-        <div class="field">
-          <label>Consent Level</label>
-          <select id="consent">
-            <option value="">— Select —</option>
-            <option>public</option>
-            <option>project-internal</option>
-            <option>team-only</option>
-          </select>
-        </div>
-      </div>
-    </div>
-  </details>
-
-  <!-- 7 -->
-  <details class="card accordion" data-key="sec7">
-    <summary><span>7) QC Checks</span></summary>
-    <div class="content">
-      <div id="qcPanel" class="qc-panel">
-        <p class="muted">Click “Run QC Checks” in the footer to evaluate this entry.</p>
-      </div>
-    </div>
-  </details>
-</main>
-
-<footer class="app-footer">
-  <div class="org">
-    Shema Bible Translation, University of the Nations. YWAM Kansas City.
-  </div>
-  <div class="footer-toolbar">
-    <button id="btnTheme" class="ghost" title="Toggle dark/light theme">🌙</button>
-    <button id="btnRunQC">Run QC Checks</button>
-    <button id="btnExportJSON">Export Entry (JSON)</button>
-    <button id="btnExportCSV">Export Transcript (CSV)</button>
-    <label class="import-label">
-      Import Entry (JSON)
-      <input type="file" id="importFile" accept="application/json">
-    </label>
-    <button id="btnClearForm" class="danger">Clear Form</button>
-  </div>
-</footer>
-
-<script src="app.js"></script>
+  <script src="app.js"></script>
 </body>
 </html>
