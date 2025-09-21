@@ -1,28 +1,22 @@
-# Language Archive Collector — Ideas First
+# Language Archive Collector — Goal Clock + CSV Export
 
-This build moves the **creative step to the front**:
+New in this build
 
-1) **Ideas & Themes** — choose a genre and a prompt (or type your own). See **per‑genre clocks** showing the total recorded hours collected locally.  
-2) **Audio Capture** — record/upload audio, see the **waveform**, select & **trim**, adjust **playback speed**, attach to entry.  
-3) **Transcript & Tagging** — type/paste, highlight spans, **Tag Selection** with marker IDs; apply **Profiles**.  
-4) **Entry & Language Metadata** — language name/code/dialect, genre/register/style.  
-5) **Performance Context** — setting, audience, participation, social constraints.  
-6) **Contributors & Consent** — speaker, collector, consent level.  
-7) **QC Checks** — run validation and fix anything that fails.
+- **Total clock + progress bar** in the header. Target is **100 hours**. The header shows the sum of audio durations from all locally saved entries and fills a progress bar (0–100%).  
+- **Export Transcript (CSV)**: exports the transcript as a **table of sentences** with columns **ref, sentence, tags, notes**.  
+  - Sentences are split by `. ! ? …` or line breaks.  
+  - Any **marker tags** that overlap a sentence are collected into the **tags** column (joined with `|`).  
+  - **notes** is left empty so teams can annotate later in a spreadsheet.
 
-Other highlights
-- **Dark/Light theme** toggle (persisted).  
-- **Dual-open** behavior for sections **2** and **3** so you can **listen while transcribing**.  
-- **Local save (IndexedDB)**; **Search** by ID/language/genre/etc.; **Export/Import JSON** (packs audio if not too large).  
-- **Logo** in the header and new tagline: **Tripod: Meaning Based AI-Assisted OBT**.
+Everything else remains:
+- **Ideas & Themes** first, with **per‑genre clocks**,
+- **Audio Capture** + **Transcript & Tagging** can be open at the same time,
+- **Waveform** view and **trim**,
+- **Dark/Light** theme (persisted),
+- **Search**, **QC checks**, **JSON export/import**,
+- Your **logo** and tagline: *Tripod: Meaning Based AI‑Assisted OBT*.
 
-### Per-genre “clocks”
-- The app stores **audio duration** with each saved entry. The **Ideas & Themes** page sums durations by genre and shows a live **HH:MM:SS** clock for each genre.  
-- Click **Refresh Clocks** to rebuild the totals from your local archive (it will try to estimate durations for older entries by decoding their audio).
-
-### Waveform editing (quick guide)
-1. Record or upload → **Show Waveform** (draws automatically after recording).  
-2. **Drag to select** a region; **Zoom** if needed.  
-3. **Trim to Selection (Replace)** to make the clip your attached audio; or **Download WAV (Selection)**.
-
-This UI follows the Language Archive guidance in your manuscript—**genre coverage** and **light, function‑first tags**—so you elicit authentic speech first and annotate after. 
+### How the total clock works
+- When you **record** or **upload** audio, the app decodes the file and stores its **duration** with the entry (`audio.durationSec`).  
+- The **Ideas & Themes** clocks and the **header progress bar** sum these durations across your local archive.  
+- Click **Refresh Clocks** to re‑compute totals (the app will try to estimate durations for older entries by decoding their audio).

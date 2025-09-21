@@ -1,8 +1,6 @@
-// Language Archive Collector — Ideas First + Dual Open + Waveform + Theme
-// Adds: Ideas & Themes (genre prompts + per-genre recording clock), Audio Capture as section 2, Transcript as section 3.
-// Keeps: tagging with visible marker IDs, profiles, QC, search, local save, export/import, waveform trim, logo, theme toggle.
+// Language Archive Collector — Adds total clock + progress bar (100h goal) and CSV export of sentences
+// Keeps: Ideas-first flow, dual-open sections 2 & 3, waveform editing, theme toggle, logo, search, QC, JSON export/import.
 
-// --- Constants ---
 const MARKERS = [
   { id: "LA:BG_opener_past", label: "Background opener ( past )", description: "Conventional background/opening frame for past-time narration." },
   { id: "LA:CHAIN_medial", label: "Clause chaining – medial", description: "Medial link used to advance a narrative sequence." },
@@ -75,6 +73,10 @@ const GENRE_PROMPTS = {
 };
 
 const byId = id => document.getElementById(id);
+
+// --- Goal constants ---
+const GOAL_HOURS = 100;
+const GOAL_SEC = GOAL_HOURS * 3600;
 
 // --- State ---
 let db;
@@ -174,39 +176,31 @@ function renderIdeasList(){
       const custom = byId(`promptCustom_${key}`).value.trim();
       const prompt = custom || (sel?.value||"");
       if (!prompt){ alert("Choose or type an idea/prompt first."); return; }
-      // Set current idea
       currentIdea.genre = genre;
       currentIdea.prompt = prompt;
-      // Reflect in Audio Capture header
       byId("currentIdeaGenre").textContent = genre;
       byId("currentIdeaPrompt").textContent = prompt;
-      // Pre-fill Metadata genre
       const gsel = byId("genre"); if (gsel) gsel.value = genre;
-      // Open Audio Capture (sec2) and Transcript (sec3) together
       const s2 = document.querySelector('details[data-key="sec2"]');
       const s3 = document.querySelector('details[data-key="sec3"]');
-      if (s2) s2.open = true;
-      if (s3) s3.open = true;
+      if (s2) s2.open = true; if (s3) s3.open = true;
       s2?.querySelector('summary')?.scrollIntoView({behavior:'smooth', block:'start'});
-      // Persist accordion state
       const openKeys = Array.from(document.querySelectorAll('details.accordion')).filter(x=>x.open).map(x=>x.dataset.key);
       localStorage.setItem('la_acc_open', JSON.stringify(openKeys));
     });
   });
 }
 
-// Compute total recorded time per genre (from saved entries; uses stored durationSec if present; otherwise tries to decode audio blobs)
+// Compute total recorded time per genre and update header progress
 async function recalcGenreClocks(){
   const totals = {}; GENRES.forEach(g=>totals[g]=0);
   const entries = await listEntries();
-  // Collect tasks to fill missing durations from audio blobs
   const decodeTasks = [];
   entries.forEach(e=>{
     if (!e.genre) return;
     const dur = e.audio?.durationSec;
     if (dur && dur>0){ totals[e.genre] += dur; }
     else {
-      // try to decode blob to find duration
       decodeTasks.push((async()=>{
         try{
           const {audio} = await getEntry(e.entryId);
@@ -215,7 +209,7 @@ async function recalcGenreClocks(){
             const buf = await ac.decodeAudioData(await audio.arrayBuffer());
             const d = buf.duration||0;
             totals[e.genre] += d;
-            // Optionally persist back (best effort; ignore errors)
+            // persist duration if possible
             e.audio = e.audio || {}; e.audio.durationSec = d;
             try{ await saveEntry(e,null); }catch{}
           }
@@ -224,13 +218,26 @@ async function recalcGenreClocks(){
     }
   });
   await Promise.allSettled(decodeTasks);
-  // Update clocks
+
+  // Update per-genre clocks and total
+  let totalSec = 0;
   GENRES.forEach(g=>{
     const el = byId(`clock_${safeKey(g)}`);
+    totalSec += totals[g];
     if (el) el.textContent = toHMS(totals[g]);
   });
+  updateGoalProgress(totalSec);
 }
-byId("btnRecalcClocks").addEventListener("click", recalcGenreClocks);
+
+function updateGoalProgress(totalSec){
+  const totalClock = byId("totalClock");
+  const bar = byId("progressBar");
+  const wrap = document.querySelector(".progress-wrap");
+  totalClock.textContent = toHMS(totalSec);
+  const pct = Math.min(100, (totalSec/GOAL_SEC)*100);
+  bar.style.width = pct.toFixed(1)+"%";
+  wrap.setAttribute("aria-valuenow", String(Math.floor(totalSec)));
+}
 
 // --- Glossary ---
 function renderGlossary(filter=""){
@@ -361,7 +368,6 @@ function readEntryFromUI(){
   };
 }
 function writeEntryToUI(e){
-  // Idea
   currentIdea.genre = e.idea?.genre||"";
   currentIdea.prompt = e.idea?.prompt||"";
   byId("currentIdeaGenre").textContent = currentIdea.genre||"—";
@@ -387,7 +393,7 @@ function writeEntryToUI(e){
   byId("profileSelect").value = e.profileApplied||"";
   currentAudioDurationSec = e.audio?.durationSec||0;
   if (e.audio?.hasAudio){
-    getEntry(e.entryId).then(({audio})=>{ if(audio){ lastAudioBlob=audio; byId("audioPlayer").src=URL.createObjectURL(audio); byId("btnAttachAudio").disabled=false; renderWaveformFromBlob(lastAudioBlob); } });
+    getEntry(e.entryId).then(async ({audio})=>{ if(audio){ lastAudioBlob=audio; byId("audioPlayer").src=URL.createObjectURL(audio); byId("btnAttachAudio").disabled=false; await renderWaveformFromBlob(lastAudioBlob); } });
   } else {
     lastAudioBlob=null; byId("audioPlayer").removeAttribute("src"); clearWaveform();
   }
@@ -582,7 +588,6 @@ async function trimToSelection(returnBlob=false){
   return wavBlob;
 }
 byId("btnTrimApply").addEventListener("click", ()=>{ trimToSelection(false); });
-
 byId("btnDownloadSel").addEventListener("click", async ()=>{
   const b = await trimToSelection(true);
   if(!b) return;
@@ -637,8 +642,7 @@ byId("btnSaveEntry").addEventListener("click", async ()=>{
   try{
     await saveEntry(e,lastAudioBlob);
     alert("Entry saved locally.");
-    // Update clocks after save
-    recalcGenreClocks();
+    recalcGenreClocks(); // update per-genre and total progress
   }catch(err){ alert("Save failed: "+err); }
 });
 byId("btnRunQC").addEventListener("click", runQC);
@@ -653,6 +657,94 @@ byId("btnExportJSON").addEventListener("click", async ()=>{
   const blob = new Blob([JSON.stringify(pkg,null,2)],{type:"application/json"});
   const url = URL.createObjectURL(blob); const a = document.createElement("a"); a.href=url; a.download=`${e.entryId||"entry"}.json`; a.click(); URL.revokeObjectURL(url);
 });
+
+// --- CSV Export of sentences ---
+byId("btnExportCSV").addEventListener("click", ()=>{
+  const csv = buildTranscriptCSV();
+  if (!csv){ alert("Nothing to export. Add a transcript first."); return; }
+  const id = (byId("entryId").value||"entry").trim() || "entry";
+  const blob = new Blob([csv], {type:"text/csv;charset=utf-8"});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = `${id}_transcript.csv`;
+  a.click();
+  URL.revokeObjectURL(url);
+});
+
+function buildTranscriptCSV(){
+  const root = byId("transcript");
+  const { text, marks } = extractTextAndMarkOffsets(root);
+  const sentences = segmentSentences(text);
+  if (!sentences.length) return null;
+  // assign tags to sentences by overlap
+  for (const m of marks){
+    for (const s of sentences){
+      if (m.start < s.end && m.end > s.start){
+        s.tags.add(m.marker);
+      }
+    }
+  }
+  const header = ["ref","sentence","tags","notes"];
+  const rows = [header];
+  sentences.forEach((s, i)=>{
+    const tags = Array.from(s.tags).join(" | ");
+    rows.push([String(i+1), s.text, tags, ""]);
+  });
+  return rows.map(r=>r.map(csvCell).join(",")).join("\r\n");
+}
+
+function csvCell(v){
+  const s = (v==null?"":String(v));
+  if (/[",\r\n]/.test(s)){
+    return '"' + s.replace(/"/g,'""') + '"';
+  }
+  return s;
+}
+
+function extractTextAndMarkOffsets(root){
+  let text = "";
+  const marks = [];
+  function walk(node){
+    if (node.nodeType === Node.TEXT_NODE){
+      text += node.nodeValue;
+      return;
+    }
+    if (node.nodeType !== Node.ELEMENT_NODE) return;
+    // ignore profile applied notes
+    if (node.id && node.id.startsWith("profile-note-")) return;
+    const tn = node.tagName;
+    if (tn === "BR"){
+      text += "\n";
+      return;
+    }
+    if (tn === "MARK" && node.hasAttribute("data-marker")){
+      const start = text.length;
+      node.childNodes.forEach(walk);
+      const end = text.length;
+      marks.push({start, end, marker: node.getAttribute("data-marker")});
+      return;
+    }
+    node.childNodes.forEach(walk);
+    if (tn === "DIV" || tn === "P"){ text += "\n"; }
+  }
+  walk(root);
+  return { text, marks };
+}
+
+function segmentSentences(text){
+  const sents = [];
+  const re = /[^.!?…\n]+(?:[.!?…]+|$)/g;
+  let m;
+  while ((m = re.exec(text)) !== null){
+    const raw = m[0].trim();
+    if (!raw) continue;
+    sents.push({ start: m.index, end: m.index + m[0].length, text: raw, tags: new Set() });
+  }
+  return sents;
+}
+
+// Import / Clear / Search
 byId("importFile").addEventListener("change", async e=>{
   const f=e.target.files?.[0]; if(!f) return;
   try{
@@ -663,6 +755,7 @@ byId("importFile").addEventListener("change", async e=>{
       lastAudioBlob = new Blob([bytes],{type:pkg.audio.mimeType||"audio/webm"}); byId("audioPlayer").src=URL.createObjectURL(lastAudioBlob); byId("btnAttachAudio").disabled=false; await renderWaveformFromBlob(lastAudioBlob);
     } else { lastAudioBlob=null; byId("audioPlayer").removeAttribute("src"); clearWaveform(); }
     alert("Entry imported; click Save Entry to persist locally.");
+    recalcGenreClocks();
   }catch(err){ alert("Import failed: "+err); }
 });
 byId("btnClearForm").addEventListener("click", ()=>{ if(confirm("Clear the form? Unsaved changes will be lost.")){ writeEntryToUI(blankEntry()); clearWaveform(); }});
@@ -688,25 +781,6 @@ byId("btnSearch").addEventListener("click", async ()=>{
       const sec1 = document.querySelector('details[data-key="sec1"]'); if (sec1){ sec1.open = true; sec1.querySelector('summary')?.scrollIntoView({behavior:'smooth'}); }
     });
   });
-});
-
-// --- Glossary & Markers ---
-byId("btnAddMarker").addEventListener("click", tagSelection);
-byId("btnClearMarkers").addEventListener("click", ()=>{
-  const tr = byId("transcript");
-  tr.querySelectorAll("mark[data-marker]").forEach(m=>{ const p=m.parentNode; while(m.firstChild) p.insertBefore(m.firstChild,m); p.removeChild(m); });
-});
-
-byId("btnApplyProfile").addEventListener("click", ()=>{
-  const id = byId("profileSelect").value; if(!id){ alert("Choose a profile."); return; }
-  const p = PROFILES.find(x=>x.id===id); if(!p) return;
-  const tr = byId("transcript"); const noteId = `profile-note-${safeKey(id)}`;
-  if(!tr.querySelector(`#${noteId}`)){
-    const note = document.createElement("div");
-    note.id = noteId; note.style.fontSize="12px"; note.style.color="var(--muted)"; note.style.marginTop="8px";
-    note.textContent = `[Profile applied: ${p.id} → ${p.markers.join(", ")}]`;
-    tr.appendChild(note);
-  }
 });
 
 // --- Boot ---
