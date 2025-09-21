@@ -1,27 +1,31 @@
+
 <!DOCTYPE html>
 <html lang="en" data-theme="light">
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Tripod: Meaning Based AI‑Assisted OBT — Language Archive Collector (MVP)</title>
+  <title>Language Archive Collector — Tripod: Meaning‑Based AI‑Assisted OBT</title>
+
+  <!-- Montserrat font -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;700&display=swap" rel="stylesheet">
+
   <link rel="stylesheet" href="styles.css" />
 </head>
 <body>
-  <!-- Masthead: title + subtitle (always on top on desktop & phone) -->
+  <!-- Masthead -->
   <div id="masthead" role="banner" aria-label="App title">
     <div class="masthead-inner">
-      <img src="assets/logo.png" alt="Tripod logo" class="logo" />
+      <img src="assets/logo-shema-white.png" alt="Shema logo" class="logo" />
       <div class="titles">
-        <h1 class="app-title">Tripod: Meaning Based AI‑Assisted OBT</h1>
-        <p class="app-subtitle">Language Archive Collector • MVP</p>
+        <h1 class="app-title">Language Archive Collector</h1>
+        <p class="app-subtitle">Tripod: Meaning‑Based AI‑Assisted OBT</p>
       </div>
     </div>
   </div>
 
-  <!-- Primary header: sticky; minimal controls per your spec -->
+  <!-- Sticky header: totals + actions -->
   <header id="app-header" role="toolbar" aria-label="Primary controls">
     <div class="header-inner">
       <div class="meta-block">
@@ -40,7 +44,7 @@
     </div>
   </header>
 
-  <!-- Sticky section controls (search + expand/collapse) touching header -->
+  <!-- Section toolbar -->
   <div id="section-toolbar" role="region" aria-label="Section utilities">
     <div class="toolbar-inner">
       <div class="search-group">
@@ -56,19 +60,16 @@
 
   <!-- Main content -->
   <main id="content">
-    <!-- Section 1: Ideas & Themes -->
+    <!-- 1) Ideas & Themes (collapsed by default) -->
     <section class="pane" data-pane="ideas">
-      <button class="pane-head" aria-expanded="true">
-        <span>1) Ideas &amp; Themes</span>
-        <span class="chev">▾</span>
+      <button class="pane-head" aria-expanded="false">
+        <span>1) Ideas &amp; Themes</span><span class="chev">▸</span>
       </button>
-      <div class="pane-body">
+      <div class="pane-body" style="display:none">
         <div class="ideas-grid">
           <aside class="genres">
             <h3>Genres (with hours)</h3>
-            <ul id="genreList" class="genre-list" aria-live="polite">
-              <!-- Populated by JS -->
-            </ul>
+            <ul id="genreList" class="genre-list" aria-live="polite"></ul>
           </aside>
           <div class="ideas-content">
             <div class="field-row">
@@ -85,36 +86,48 @@
       </div>
     </section>
 
-    <!-- Section 2: Audio Capture -->
+    <!-- 2) Audio Capture (collapsed by default) -->
     <section class="pane" data-pane="audio">
-      <button class="pane-head" aria-expanded="true">
-        <span>2) Audio Capture</span><span class="chev">▾</span>
+      <button class="pane-head" aria-expanded="false">
+        <span>2) Audio Capture</span><span class="chev">▸</span>
       </button>
-      <div class="pane-body">
+      <div class="pane-body" style="display:none">
         <div class="audio-controls">
-          <button id="recordBtn" class="btn primary">● Record</button>
+          <button id="recordBtn" class="btn primary">Record</button>
           <button id="pauseBtn" class="btn">Pause</button>
           <button id="resumeBtn" class="btn">Resume</button>
-          <button id="stopBtn" class="btn danger">■ Stop</button>
+          <button id="stopBtn" class="btn danger">Stop</button>
+
           <input id="audioTitle" class="input" placeholder="Clip title (optional)" />
           <a id="downloadClip" class="btn outline" download="clip.webm" aria-disabled="true">Download</a>
+
+          <span id="recStatus" class="rec-status" aria-live="polite">Idle</span>
+          <button id="uploadBtn" class="btn outline" type="button">Upload audio</button>
+          <input id="uploadAudio" type="file" accept="audio/*" hidden />
         </div>
+
         <canvas id="waveform" height="84" aria-label="Waveform"></canvas>
+
         <div class="trim-controls">
-          <label>Trim from (sec) <input id="trimStart" type="number" min="0" step="0.1" value="0"></label>
-          <label>to (sec) <input id="trimEnd" type="number" min="0" step="0.1" value="0"></label>
+          <label>Trim from (sec)
+            <input id="trimStart" type="number" min="0" step="0.1" value="0">
+          </label>
+          <label>to (sec)
+            <input id="trimEnd" type="number" min="0" step="0.1" value="0">
+          </label>
           <button id="applyTrimBtn" class="btn">Apply trim</button>
         </div>
+
         <audio id="player" controls></audio>
       </div>
     </section>
 
-    <!-- Section 3: Entry / Language Metadata -->
+    <!-- 3) Entry / Language Metadata (collapsed by default) -->
     <section class="pane" data-pane="meta">
       <button class="pane-head" aria-expanded="false">
         <span>3) Entry &amp; Language Metadata</span><span class="chev">▸</span>
       </button>
-      <div class="pane-body">
+      <div class="pane-body" style="display:none">
         <div class="grid-3">
           <div class="field">
             <label for="entryId">Entry ID</label>
@@ -144,14 +157,14 @@
       </div>
     </section>
 
-    <!-- Section 4 & 5 openable side-by-side on larger screens -->
+    <!-- 4+5 in a flex grid; they are the only panes allowed to stay open together -->
     <div class="pane-flex">
-      <!-- Section 4: Transcription & Tagging -->
+      <!-- 4) Transcription & Tagging (collapsed by default) -->
       <section class="pane" data-pane="transcript">
-        <button class="pane-head" aria-expanded="true">
-          <span>4) Transcription &amp; Tagging</span><span class="chev">▾</span>
+        <button class="pane-head" aria-expanded="false">
+          <span>4) Transcription &amp; Tagging</span><span class="chev">▸</span>
         </button>
-        <div class="pane-body">
+        <div class="pane-body" style="display:none">
           <div class="field-row">
             <label for="markerSelect">Marker</label>
             <select id="markerSelect"></select>
@@ -170,12 +183,12 @@
         </div>
       </section>
 
-      <!-- Section 5: Audio Capture (duplicate view to allow side-by-side) -->
+      <!-- 5) Audio (mini) (collapsed by default) -->
       <section class="pane" data-pane="audioSide">
-        <button class="pane-head" aria-expanded="true">
-          <span>5) Audio Capture (side)</span><span class="chev">▾</span>
+        <button class="pane-head" aria-expanded="false">
+          <span>5) Audio</span><span class="chev">▸</span>
         </button>
-        <div class="pane-body">
+        <div class="pane-body" style="display:none">
           <p class="muted">Use this mini player to listen while transcribing.</p>
           <audio id="playerSide" controls></audio>
           <div class="tiny-gap"></div>
@@ -184,18 +197,20 @@
       </section>
     </div>
 
-    <!-- Section 6: Marker Glossary, Profiles, QC -->
+    <!-- 6) Marker Glossary & QC (collapsed by default) -->
     <section class="pane" data-pane="glossary">
       <button class="pane-head" aria-expanded="false">
         <span>6) Marker Glossary, Profiles &amp; QC</span><span class="chev">▸</span>
       </button>
-      <div class="pane-body">
+      <div class="pane-body" style="display:none">
         <div class="grid-2">
           <div>
             <h3>Marker Glossary</h3>
             <ul id="glossaryList" class="glossary"></ul>
           </div>
           <div>
+            <h3>Optional Bundles</h3>
+            <ul id="profileList" class="glossary"></ul>
             <h3>Run QC Checks</h3>
             <button id="qcBtn" class="btn primary">Run QC</button>
             <pre id="qcOutput" class="qc"></pre>
@@ -205,17 +220,14 @@
     </section>
   </main>
 
-  <!-- Footer: sticky action bar -->
+  <!-- Footer -->
   <footer id="app-footer" role="contentinfo">
     <div class="footer-inner">
       <div class="footer-actions">
         <button id="themeToggle" class="btn">Dark / Light</button>
-        <button id="searchBtn" class="btn">Search</button>
         <button id="clearFormBtn" class="btn danger">Clear Form</button>
       </div>
-      <div class="org">
-        Shema Bible Translation, University of the Nations. YWAM Kansas City.
-      </div>
+      <div class="org">© 2025 Shema Bible Translation, University of the Nations. YWAM Kansas City.</div>
     </div>
   </footer>
 
