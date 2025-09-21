@@ -1,0 +1,263 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Tripod &mdash; Meaning Based AI‑Assisted OBT</title>
+  <!-- Load Montserrat font for a clean, modern look -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <!-- Base stylesheet with Shema palette and minimalist styling -->
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <!-- Masthead: combines logo, title and subtitle on top of a subtle pattern -->
+  <div id="masthead" role="banner" aria-label="App title">
+    <div class="masthead-inner">
+      <!-- Local copy of the organisation logo (downloaded from existing Tripod app) -->
+      <img src="logo.png" alt="Organisation logo" class="logo">
+      <div class="titles">
+        <h1 class="app-title">Tripod: Meaning Based AI‑Assisted OBT</h1>
+        <p class="app-subtitle">Language Archive Collector</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Sticky primary header containing summary metrics and quick actions -->
+  <header id="app-header" role="toolbar" aria-label="Primary controls">
+    <div class="header-inner">
+      <div class="meta-block">
+        <div class="clock-wrap">
+          <span id="totalHours" class="clock">0h 00m</span>
+          <span class="goal">/ 100h goal</span>
+        </div>
+        <div class="progress">
+          <div id="progressFill" class="progress-fill" style="width:0%"></div>
+        </div>
+      </div>
+      <div class="header-actions">
+        <button id="newEntryBtn" class="btn primary">New Entry</button>
+        <button id="saveEntryBtn" class="btn outline">Save Entry</button>
+      </div>
+    </div>
+  </header>
+
+  <!-- Section controls: search bar and expand/collapse toggles -->
+  <div id="section-toolbar" role="region" aria-label="Section utilities">
+    <div class="toolbar-inner">
+      <div class="search-group">
+        <input id="searchInput" type="search" placeholder="Search entries, tags, notes…" aria-label="Search">
+        <button id="clearSearchBtn" class="btn subtle" title="Clear search">Clear</button>
+      </div>
+      <div class="section-toggles">
+        <button id="expandAllBtn" class="btn subtle">Expand all</button>
+        <button id="collapseAllBtn" class="btn subtle">Collapse all</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Main content area containing collapsible panes -->
+  <main id="content">
+    <!-- Section 1: Ideas & Themes -->
+    <section class="pane" data-pane="ideas">
+      <button class="pane-head" aria-expanded="true">
+        <span>1) Ideas &amp; Themes</span>
+        <span class="chev">▾</span>
+      </button>
+      <div class="pane-body">
+        <div class="ideas-grid">
+          <aside class="genres">
+            <h3>Genres (with hours)</h3>
+            <ul id="genreList" class="genre-list" aria-live="polite">
+              <li class="genre-item"><span>Narrative (with dialogue)</span><span class="hours">0h 00m</span></li>
+              <li class="genre-item"><span>Lament</span><span class="hours">0h 00m</span></li>
+              <li class="genre-item"><span>Hymn / Song</span><span class="hours">0h 00m</span></li>
+              <li class="genre-item"><span>Proverb / Wisdom</span><span class="hours">0h 00m</span></li>
+              <li class="genre-item"><span>Procedural / Instruction</span><span class="hours">0h 00m</span></li>
+              <li class="genre-item"><span>Law / Procedural Legal</span><span class="hours">0h 00m</span></li>
+              <li class="genre-item"><span>List / Genealogy</span><span class="hours">0h 00m</span></li>
+              <li class="genre-item"><span>Prayer / Blessing</span><span class="hours">0h 00m</span></li>
+              <li class="genre-item"><span>Blessing / Curse</span><span class="hours">0h 00m</span></li>
+            </ul>
+          </aside>
+          <div class="ideas-content">
+            <div class="field-row">
+              <label for="genreSelect">Select genre</label>
+              <select id="genreSelect">
+                <option value="Narrative (with dialogue)">Narrative (with dialogue)</option>
+                <option value="Lament">Lament</option>
+                <option value="Hymn / Song">Hymn / Song</option>
+                <option value="Proverb / Wisdom">Proverb / Wisdom</option>
+                <option value="Procedural / Instruction">Procedural / Instruction</option>
+                <option value="Law / Procedural Legal">Law / Procedural Legal</option>
+                <option value="List / Genealogy">List / Genealogy</option>
+                <option value="Prayer / Blessing">Prayer / Blessing</option>
+                <option value="Blessing / Curse">Blessing / Curse</option>
+              </select>
+            </div>
+            <div class="field-row">
+              <label for="promptSelect">Pick an idea / prompt</label>
+              <select id="promptSelect">
+                <option value="Tell about a time a visitor came and brought surprising news.">Tell about a time a visitor came and brought surprising news.</option>
+                <option value="Describe a journey when the weather changed suddenly.">Describe a journey when the weather changed suddenly.</option>
+                <option value="Recall a dispute that was solved by a wise elder.">Recall a dispute that was solved by a wise elder.</option>
+              </select>
+            </div>
+            <button id="startWithPromptBtn" class="btn primary">Start with this prompt &rarr; Audio Capture</button>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Section 2: Audio Capture -->
+    <section class="pane" data-pane="audio">
+      <button class="pane-head" aria-expanded="true">
+        <span>2) Audio Capture</span><span class="chev">▾</span>
+      </button>
+      <div class="pane-body">
+        <div class="audio-controls">
+          <button id="recordBtn" class="btn primary">&#9679; Record</button>
+          <button id="pauseBtn" class="btn">Pause</button>
+          <button id="resumeBtn" class="btn">Resume</button>
+          <button id="stopBtn" class="btn danger">&#9632; Stop</button>
+          <input id="audioTitle" class="input" placeholder="Clip title (optional)">
+          <a id="downloadClip" class="btn outline" download="clip.webm" aria-disabled="true">Download</a>
+        </div>
+        <canvas id="waveform" height="84" aria-label="Waveform"></canvas>
+        <div class="trim-controls">
+          <label>Trim from (sec)
+            <input id="trimStart" type="number" min="0" step="0.1" value="0">
+          </label>
+          <label>to (sec)
+            <input id="trimEnd" type="number" min="0" step="0.1" value="0">
+          </label>
+          <button id="applyTrimBtn" class="btn">Apply trim</button>
+        </div>
+        <audio id="player" controls></audio>
+      </div>
+    </section>
+
+    <!-- Section 3: Entry / Language Metadata -->
+    <section class="pane" data-pane="meta">
+      <button class="pane-head" aria-expanded="false">
+        <span>3) Entry &amp; Language Metadata</span><span class="chev">▸</span>
+      </button>
+      <div class="pane-body">
+        <div class="grid-3">
+          <div class="field">
+            <label for="entryId">Entry ID</label>
+            <input id="entryId" placeholder="Auto or custom ID">
+          </div>
+          <div class="field">
+            <label for="languageName">Language name</label>
+            <input id="languageName" placeholder="Name">
+          </div>
+          <div class="field">
+            <label for="languageCode">Language code</label>
+            <input id="languageCode" placeholder="ISO / internal code">
+          </div>
+          <div class="field">
+            <label for="dialect">Dialect</label>
+            <input id="dialect" placeholder="Dialect (optional)">
+          </div>
+          <div class="field">
+            <label for="style">Style</label>
+            <input id="style" placeholder="e.g., conversational, ceremonial">
+          </div>
+          <div class="field">
+            <label for="dateField">Date</label>
+            <input id="dateField" type="date">
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Section 4 & 5 openable side-by-side on larger screens -->
+    <div class="pane-flex">
+      <!-- Section 4: Transcription & Tagging -->
+      <section class="pane" data-pane="transcript">
+        <button class="pane-head" aria-expanded="true">
+          <span>4) Transcription &amp; Tagging</span><span class="chev">▾</span>
+        </button>
+        <div class="pane-body">
+          <div class="field-row">
+            <label for="markerSelect">Marker</label>
+            <select id="markerSelect">
+              <option value="LA:BG_opener_past">LA:BG_opener_past — Background opener (past)</option>
+              <option value="LA:CHAIN_medial">LA:CHAIN_medial — Chain - medial</option>
+              <option value="LA:CHAIN_final">LA:CHAIN_final — Chain - final</option>
+              <option value="LA:QUOTE_OPEN_simple">LA:QUOTE_OPEN_simple — Quote open (simple)</option>
+              <option value="LA:QUOTE_CLOSE_simple">LA:QUOTE_CLOSE_simple — Quote close (simple)</option>
+              <option value="LA:RESULT_summary">LA:RESULT_summary — Result summary</option>
+              <option value="LA:LIST_enumerator">LA:LIST_enumerator — List enumerator</option>
+              <option value="LA:POET_parallel-A≈B">LA:POET_parallel-A≈B — Poetic parallel A≈B</option>
+            </select>
+            <button id="applyTagBtn" class="btn">Apply Tag</button>
+          </div>
+          <textarea id="transcript" rows="9" placeholder="Type the transcript here. Select text and Apply Tag."></textarea>
+          <div class="field-row">
+            <label for="notes">Notes</label>
+            <input id="notes" placeholder="Reviewer notes (optional)">
+          </div>
+          <div class="export-row">
+            <button id="exportJsonBtn" class="btn outline">Export Entry (JSON)</button>
+            <button id="exportCsvBtn" class="btn outline">Export Transcript (CSV)</button>
+            <button id="importJsonBtn" class="btn">Import Entry (JSON)</button>
+          </div>
+        </div>
+      </section>
+
+      <!-- Section 5: Audio Capture (side) -->
+      <section class="pane" data-pane="audioSide">
+        <button class="pane-head" aria-expanded="true">
+          <span>5) Audio Capture (side)</span><span class="chev">▾</span>
+        </button>
+        <div class="pane-body">
+          <p class="muted">Use this mini player to listen while transcribing.</p>
+          <audio id="playerSide" controls></audio>
+          <div class="tiny-gap"></div>
+          <canvas id="waveformSide" height="64" aria-label="Waveform (side)"></canvas>
+        </div>
+      </section>
+    </div>
+
+    <!-- Section 6: Marker Glossary, Profiles & QC -->
+    <section class="pane" data-pane="glossary">
+      <button class="pane-head" aria-expanded="false">
+        <span>6) Marker Glossary, Profiles &amp; QC</span><span class="chev">▸</span>
+      </button>
+      <div class="pane-body">
+        <div class="grid-2">
+          <div>
+            <h3>Marker Glossary</h3>
+            <ul id="glossaryList" class="glossary">
+              <li>LA:BG_opener_past — Background opener (past)</li>
+              <li>LA:CHAIN_medial — Chain - medial</li>
+              <li>LA:CHAIN_final — Chain - final</li>
+              <li>LA:QUOTE_OPEN_simple — Quote open (simple)</li>
+              <li>LA:QUOTE_CLOSE_simple — Quote close (simple)</li>
+              <li>LA:RESULT_summary — Result summary</li>
+              <li>LA:LIST_enumerator — List enumerator</li>
+              <li>LA:POET_parallel-A≈B — Poetic parallel A≈B</li>
+            </ul>
+          </div>
+          <div>
+            <h3>Run QC Checks</h3>
+            <button id="qcBtn" class="btn primary">Run QC</button>
+            <pre id="qcOutput" class="qc"></pre>
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <!-- Footer: simple informational bar -->
+  <footer class="site-footer" role="contentinfo">
+    <p>Shema Bible Translation, University of the Nations. YWAM Kansas City.</p>
+  </footer>
+
+  <!-- Load application logic -->
+  <script src="app.js"></script>
+</body>
+</html>
