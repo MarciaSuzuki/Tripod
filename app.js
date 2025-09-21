@@ -1,9 +1,10 @@
-// Language Archive Collector — Accordion + Waveform + Theme
-// Keeps all features; adds theme toggle, waveform with trim, and dual-open for sections 4 & 5.
+// Language Archive Collector — Ideas First + Dual Open + Waveform + Theme
+// Adds: Ideas & Themes (genre prompts + per-genre recording clock), Audio Capture as section 2, Transcript as section 3.
+// Keeps: tagging with visible marker IDs, profiles, QC, search, local save, export/import, waveform trim, logo, theme toggle.
 
 // --- Constants ---
 const MARKERS = [
-  { id: "LA:BG_opener_past", label: "Background opener (past)", description: "Conventional background/opening frame for past-time narration." },
+  { id: "LA:BG_opener_past", label: "Background opener ( past )", description: "Conventional background/opening frame for past-time narration." },
   { id: "LA:CHAIN_medial", label: "Clause chaining – medial", description: "Medial link used to advance a narrative sequence." },
   { id: "LA:CHAIN_final", label: "Clause chaining – final", description: "Final chain marker closing a narrative sequence." },
   { id: "LA:QUOTE_OPEN_simple", label: "Quote opener – simple", description: "Default quotative open form for direct speech." },
@@ -12,19 +13,74 @@ const MARKERS = [
   { id: "LA:LIST_enumerator", label: "List enumerator", description: "Item-listing connector or pattern." },
   { id: "LA:POET_parallel-A≈B", label: "Poetic parallelism A≈B", description: "Simple two-line parallelism." }
 ];
+
 const PROFILES = [
   { id: "LA:PROFILE_NARR_casual_dialogue", label: "Narrative — casual + dialogue", markers: ["LA:BG_opener_past","LA:CHAIN_medial","LA:QUOTE_OPEN_simple"] },
   { id: "LA:PROFILE_LAMENT_formal", label: "Lament — formal", markers: ["LA:POET_parallel-A≈B","LA:RESULT_summary"] }
 ];
+
+const GENRES = [
+  "narrative","song/hymn","lament","proverb","procedural/instruction","law/procedural",
+  "genealogy/list","prayer","blessing/curse","teaching/discourse","disputation"
+];
+
+const GENRE_PROMPTS = {
+  "narrative":[
+    "Tell about a time you were in danger and how it ended.",
+    "Describe a journey where something unexpected happened.",
+    "Share a story you heard from your grandparents that people like to repeat.",
+    "A time a respected leader solved a conflict in the village."
+  ],
+  "song/hymn":[
+    "Sing a short song used in celebrations.",
+    "Hum a melody you know, then explain what the words usually say.",
+    "Create a praise line followed by a response line (call-and-response)."
+  ],
+  "lament":[
+    "Describe a time of loss or drought and how people spoke about it.",
+    "How do elders express sadness when a tragedy happens? Give a sample line."
+  ],
+  "proverb":[
+    "Say two or three proverbs used to advise the young.",
+    "Give a proverb that warns against laziness and explain it."
+  ],
+  "procedural/instruction":[
+    "Explain step by step how to prepare a traditional dish.",
+    "Describe how to greet elders properly at a ceremony."
+  ],
+  "law/procedural":[
+    "State three rules elders remind at community meetings.",
+    "Describe the proper way to make and keep a promise."
+  ],
+  "genealogy/list":[
+    "Recite a short lineage (three generations) the way it is normally said.",
+    "List key items needed for planting season (with the usual order words)."
+  ],
+  "prayer":[
+    "Say a short prayer for rain the way your people say it.",
+    "Give a blessing for a child’s journey."
+  ],
+  "blessing/curse":[
+    "Give a blessing an elder would say to a newly married couple.",
+    "State a curse formula used when someone breaks a grave rule."
+  ],
+  "teaching/discourse":[
+    "Explain why people should care for the poor, in the style of a talk.",
+    "Give a short teaching about telling the truth, with an example."
+  ],
+  "disputation":[
+    "Argue respectfully about a disputed land boundary—two short turns.",
+    "How would someone challenge a false rumor at a public meeting?"
+  ]
+};
 
 const byId = id => document.getElementById(id);
 
 // --- State ---
 let db;
 let mediaRecorder = null, recordingChunks = [], recTimerId = null, recStartTime = null, lastAudioBlob = null;
-
-// Waveform/editor state
-let audioCtx=null, audioBuf=null, zoom=1.0, selStart=0, selEnd=0;
+let audioCtx=null, audioBuf=null, zoom=1.0, selStart=0, selEnd=0, currentAudioDurationSec=0;
+let currentIdea = { genre:"", prompt:"" };
 
 // --- Utilities ---
 function generateEntryId(){
@@ -33,8 +89,10 @@ function generateEntryId(){
   const rnd = Math.floor(Math.random()*10000).toString().padStart(4,'0');
   return `LA-${ymd}-${rnd}`;
 }
-function fmt(ms){ const s=Math.floor(ms/1000), m=Math.floor(s/60); return `${String(m).padStart(2,'0')}:${String(s%60).padStart(2,'0')}`; }
+function fmt(ms){ const s=Math.floor(ms/1000), m=Math.floor(s/60), h=Math.floor(m/60); return `${String(h).padStart(2,'0')}:${String(m%60).padStart(2,'0')}:${String(s%60).padStart(2,'0')}`; }
+function toHMS(sec){ sec = Math.max(0, Math.floor(sec||0)); const h=Math.floor(sec/3600), m=Math.floor((sec%3600)/60), s=sec%60; return `${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`; }
 function clamp(v,min,max){ return Math.max(min, Math.min(max,v)); }
+const safeKey = g => g.replace(/[^a-z0-9]+/gi,'_');
 
 // --- Theme toggle ---
 (function themeBoot(){
@@ -53,23 +111,20 @@ function clamp(v,min,max){ return Math.max(min, Math.min(max,v)); }
   });
 })();
 
-// --- Accordion wiring (one-at-a-time EXCEPT sections 4 & 5 can co-exist) ---
+// --- Accordion (allow both Sections 2 & 3 open together) ---
 function wireAccordion(){
   const secs = Array.from(document.querySelectorAll('details.accordion'));
   const KEY = 'la_acc_open';
-  function isDual(s){ const k = s.dataset.key; return k==="sec4" || k==="sec5"; }
+  const isDual = s => (s.dataset.key==="sec2" || s.dataset.key==="sec3");
   secs.forEach(s => {
     s.addEventListener('toggle', () => {
       if (s.open) {
-        // Close all non-dual sections except this; keep 4/5 as-is
         secs.forEach(x => {
           if (x===s) return;
           const bothDual = isDual(s) && isDual(x);
-          if (bothDual) return; // allow 4 & 5 together
-          // For any other section, keep only one non-dual open
+          if (bothDual) return; // allow 2 & 3 together
           if (!isDual(x)) x.open = false;
         });
-        // Persist: store last opened non-dual + whether duals are open
         const openKeys = secs.filter(x=>x.open).map(x=>x.dataset.key);
         localStorage.setItem(KEY, JSON.stringify(openKeys));
         s.querySelector('summary')?.scrollIntoView({behavior:'smooth', block:'start'});
@@ -81,17 +136,101 @@ function wireAccordion(){
     try{
       const keys = JSON.parse(saved);
       secs.forEach(s => s.open = keys.includes(s.dataset.key));
-      // If none open, default to sec1
       if (!secs.some(s=>s.open)) secs.find(s=>s.dataset.key==="sec1").open = true;
     }catch{}
   }
   byId('btnExpandAll').onclick = ()=> secs.forEach(s => s.open = true);
-  byId('btnCollapseAll').onclick = ()=> {
-    secs.forEach(s => s.open = false);
-    // Keep 4 and/or 5 if they were open during work? Reset to 1 for simplicity
-    secs[0].open = true;
-  };
+  byId('btnCollapseAll').onclick = ()=> { secs.forEach(s => s.open = false); secs[0].open = true; };
 }
+
+// --- Ideas & Themes UI ---
+function renderIdeasList(){
+  const host = byId("ideasList");
+  host.innerHTML = "";
+  GENRES.forEach(genre => {
+    const key = safeKey(genre);
+    const row = document.createElement("div");
+    row.className = "idea-row";
+    row.innerHTML = `
+      <div class="genre">
+        <div>${genre}</div>
+        <div class="clock" id="clock_${key}">00:00:00</div>
+      </div>
+      <div class="controls">
+        <div style="display:flex; gap:8px; flex-wrap:wrap">
+          <select id="prompt_${key}" aria-label="Prompts for ${genre}">
+            ${(GENRE_PROMPTS[genre]||[]).map(p=>`<option value="${p.replace(/"/g,'&quot;')}">${p}</option>`).join("")}
+          </select>
+          <input type="text" id="promptCustom_${key}" placeholder="Or type your own idea/prompt…" />
+        </div>
+      </div>
+      <div class="actions">
+        <button class="small" id="start_${key}">Start with this prompt</button>
+      </div>
+    `;
+    host.appendChild(row);
+    byId(`start_${key}`).addEventListener("click", ()=>{
+      const sel = byId(`prompt_${key}`);
+      const custom = byId(`promptCustom_${key}`).value.trim();
+      const prompt = custom || (sel?.value||"");
+      if (!prompt){ alert("Choose or type an idea/prompt first."); return; }
+      // Set current idea
+      currentIdea.genre = genre;
+      currentIdea.prompt = prompt;
+      // Reflect in Audio Capture header
+      byId("currentIdeaGenre").textContent = genre;
+      byId("currentIdeaPrompt").textContent = prompt;
+      // Pre-fill Metadata genre
+      const gsel = byId("genre"); if (gsel) gsel.value = genre;
+      // Open Audio Capture (sec2) and Transcript (sec3) together
+      const s2 = document.querySelector('details[data-key="sec2"]');
+      const s3 = document.querySelector('details[data-key="sec3"]');
+      if (s2) s2.open = true;
+      if (s3) s3.open = true;
+      s2?.querySelector('summary')?.scrollIntoView({behavior:'smooth', block:'start'});
+      // Persist accordion state
+      const openKeys = Array.from(document.querySelectorAll('details.accordion')).filter(x=>x.open).map(x=>x.dataset.key);
+      localStorage.setItem('la_acc_open', JSON.stringify(openKeys));
+    });
+  });
+}
+
+// Compute total recorded time per genre (from saved entries; uses stored durationSec if present; otherwise tries to decode audio blobs)
+async function recalcGenreClocks(){
+  const totals = {}; GENRES.forEach(g=>totals[g]=0);
+  const entries = await listEntries();
+  // Collect tasks to fill missing durations from audio blobs
+  const decodeTasks = [];
+  entries.forEach(e=>{
+    if (!e.genre) return;
+    const dur = e.audio?.durationSec;
+    if (dur && dur>0){ totals[e.genre] += dur; }
+    else {
+      // try to decode blob to find duration
+      decodeTasks.push((async()=>{
+        try{
+          const {audio} = await getEntry(e.entryId);
+          if (audio){
+            const ac = ensureAudioCtx();
+            const buf = await ac.decodeAudioData(await audio.arrayBuffer());
+            const d = buf.duration||0;
+            totals[e.genre] += d;
+            // Optionally persist back (best effort; ignore errors)
+            e.audio = e.audio || {}; e.audio.durationSec = d;
+            try{ await saveEntry(e,null); }catch{}
+          }
+        }catch{}
+      })());
+    }
+  });
+  await Promise.allSettled(decodeTasks);
+  // Update clocks
+  GENRES.forEach(g=>{
+    const el = byId(`clock_${safeKey(g)}`);
+    if (el) el.textContent = toHMS(totals[g]);
+  });
+}
+byId("btnRecalcClocks").addEventListener("click", recalcGenreClocks);
 
 // --- Glossary ---
 function renderGlossary(filter=""){
@@ -126,18 +265,20 @@ function populateUI(){
     PROFILES.map(p => `<option value="${p.id}">${p.id} — ${p.label}</option>`).join("");
   byId("glossarySearch").addEventListener("input", e => renderGlossary(e.target.value));
   renderGlossary();
+  renderIdeasList();
 }
 
 // --- Model & Storage (IndexedDB) ---
 function blankEntry(){
   return {
     entryId:"", createdAt:new Date().toISOString(),
+    idea:{genre:"", prompt:""},
     language:{name:"",code:"",dialect:""},
     genre:"", register:"", style:"",
     performance:{setting:"",audience:"",participation:"",socialConstraints:""},
     speaker:{name:"",profile:""}, collector:"", consent:"",
     transcriptHtml:"", transcriptText:"", markersUsed:[], profileApplied:"",
-    audio:{hasAudio:false, mimeType:"", size:0}, version:1
+    audio:{hasAudio:false, mimeType:"", size:0, durationSec:0}, version:1
   };
 }
 function openDB(){
@@ -145,8 +286,8 @@ function openDB(){
     const req = indexedDB.open("LACollectorDB",1);
     req.onupgradeneeded = ()=>{
       db = req.result;
-      db.createObjectStore("entries",{keyPath:"entryId"});
-      db.createObjectStore("audio");
+      if (!db.objectStoreNames.contains("entries")) db.createObjectStore("entries",{keyPath:"entryId"});
+      if (!db.objectStoreNames.contains("audio")) db.createObjectStore("audio");
     };
     req.onsuccess = ()=>{ db = req.result; resolve(db); };
     req.onerror = ()=>reject(req.error);
@@ -205,6 +346,7 @@ function readEntryFromUI(){
   return {
     entryId: byId("entryId").value.trim() || generateEntryId(),
     createdAt: byId("createdAt").value.trim() || new Date().toISOString(),
+    idea: { genre: currentIdea.genre||"", prompt: currentIdea.prompt||"" },
     language: { name: byId("langName").value.trim(), code: byId("langCode").value.trim(), dialect: byId("langDialect").value.trim() },
     genre: byId("genre").value, register: byId("register").value, style: byId("style").value,
     performance: { setting: byId("setting").value, audience: byId("audience").value, participation: byId("participation").value, socialConstraints: byId("socialConstraints").value.trim() },
@@ -214,11 +356,17 @@ function readEntryFromUI(){
     transcriptHtml: tr.innerHTML, transcriptText: tr.innerText,
     markersUsed: Array.from(markers),
     profileApplied: byId("profileSelect").value,
-    audio: { hasAudio: !!lastAudioBlob, mimeType: lastAudioBlob?.type||"", size: lastAudioBlob?.size||0 },
+    audio: { hasAudio: !!lastAudioBlob, mimeType: lastAudioBlob?.type||"", size: lastAudioBlob?.size||0, durationSec: currentAudioDurationSec||0 },
     version: 1
   };
 }
 function writeEntryToUI(e){
+  // Idea
+  currentIdea.genre = e.idea?.genre||"";
+  currentIdea.prompt = e.idea?.prompt||"";
+  byId("currentIdeaGenre").textContent = currentIdea.genre||"—";
+  byId("currentIdeaPrompt").textContent = currentIdea.prompt||"—";
+
   byId("entryId").value = e.entryId||"";
   byId("createdAt").value = e.createdAt||new Date().toISOString();
   byId("langName").value = e.language?.name||"";
@@ -237,6 +385,7 @@ function writeEntryToUI(e){
   byId("consent").value = e.consent||"";
   byId("transcript").innerHTML = e.transcriptHtml||"";
   byId("profileSelect").value = e.profileApplied||"";
+  currentAudioDurationSec = e.audio?.durationSec||0;
   if (e.audio?.hasAudio){
     getEntry(e.entryId).then(({audio})=>{ if(audio){ lastAudioBlob=audio; byId("audioPlayer").src=URL.createObjectURL(audio); byId("btnAttachAudio").disabled=false; renderWaveformFromBlob(lastAudioBlob); } });
   } else {
@@ -265,7 +414,7 @@ function runQC(){
   }
   const panel = byId("qcPanel");
   panel.innerHTML = out.map(r=>`<div class="qc-item"><div>${r.name}</div><div class="${r.pass?'qc-pass':'qc-fail'}">${r.pass?'PASS':'FAIL'}</div></div>${r.pass?'':`<div class="qc-fail" style="margin-bottom:6px">${r.hint}</div>`}`).join("");
-  const qcSection = document.querySelector('details[data-key="sec6"]');
+  const qcSection = document.querySelector('details[data-key="sec7"]');
   if (qcSection){ qcSection.open = true; qcSection.querySelector('summary')?.scrollIntoView({behavior:'smooth'}); }
   return out;
 }
@@ -295,7 +444,7 @@ byId("btnClearMarkers").addEventListener("click", ()=>{
 byId("btnApplyProfile").addEventListener("click", ()=>{
   const id = byId("profileSelect").value; if(!id){ alert("Choose a profile."); return; }
   const p = PROFILES.find(x=>x.id===id); if(!p) return;
-  const tr = byId("transcript"); const noteId = `profile-note-${id}`;
+  const tr = byId("transcript"); const noteId = `profile-note-${safeKey(id)}`;
   if(!tr.querySelector(`#${noteId}`)){
     const note = document.createElement("div");
     note.id = noteId; note.style.fontSize="12px"; note.style.color="var(--muted)"; note.style.marginTop="8px";
@@ -305,18 +454,18 @@ byId("btnApplyProfile").addEventListener("click", ()=>{
 });
 
 // --- Audio Recording/Upload & Player ---
-function updateTimer(){ if(!recStartTime){ byId("recTimer").textContent="00:00"; return; } const elapsed=Date.now()-recStartTime; byId("recTimer").textContent = fmt(elapsed); }
+function updateTimer(){ if(!recStartTime){ byId("recTimer").textContent="00:00:00"; return; } const elapsed=Date.now()-recStartTime; byId("recTimer").textContent = fmt(elapsed); }
 byId("btnStartRec").addEventListener("click", async ()=>{
   try{
     const stream = await navigator.mediaDevices.getUserMedia({audio:true});
     recordingChunks=[];
     mediaRecorder = new MediaRecorder(stream,{mimeType:"audio/webm"});
     mediaRecorder.ondataavailable = e => { if(e.data && e.data.size>0) recordingChunks.push(e.data); };
-    mediaRecorder.onstop = ()=>{
+    mediaRecorder.onstop = async ()=>{
       lastAudioBlob = new Blob(recordingChunks,{type:"audio/webm"});
       byId("audioPlayer").src = URL.createObjectURL(lastAudioBlob);
       byId("btnAttachAudio").disabled=false;
-      renderWaveformFromBlob(lastAudioBlob);
+      await renderWaveformFromBlob(lastAudioBlob);
     };
     mediaRecorder.start(); recStartTime=Date.now(); if(recTimerId) clearInterval(recTimerId); recTimerId=setInterval(updateTimer,500);
     byId("btnStartRec").disabled=true; byId("btnPauseRec").disabled=false; byId("btnStopRec").disabled=false;
@@ -324,8 +473,8 @@ byId("btnStartRec").addEventListener("click", async ()=>{
 });
 byId("btnPauseRec").addEventListener("click", ()=>{ if(mediaRecorder?.state==="recording"){ mediaRecorder.pause(); clearInterval(recTimerId); byId("btnPauseRec").disabled=true; byId("btnResumeRec").disabled=false; }});
 byId("btnResumeRec").addEventListener("click", ()=>{ if(mediaRecorder?.state==="paused"){ mediaRecorder.resume(); recStartTime=Date.now(); recTimerId=setInterval(updateTimer,500); byId("btnPauseRec").disabled=false; byId("btnResumeRec").disabled=true; }});
-byId("btnStopRec").addEventListener("click", ()=>{ if(mediaRecorder){ mediaRecorder.stop(); mediaRecorder.stream.getTracks().forEach(t=>t.stop()); clearInterval(recTimerId); recTimerId=null; byId("btnStartRec").disabled=false; byId("btnPauseRec").disabled=true; byId("btnResumeRec").disabled=true; byId("btnStopRec").disabled=true; byId("recTimer").textContent="00:00"; }});
-byId("audioUpload").addEventListener("change", async e=>{ const f=e.target.files?.[0]; if(!f) return; lastAudioBlob = new Blob([await f.arrayBuffer()],{type:f.type||"audio/*"}); byId("audioPlayer").src = URL.createObjectURL(lastAudioBlob); byId("btnAttachAudio").disabled=false; renderWaveformFromBlob(lastAudioBlob); });
+byId("btnStopRec").addEventListener("click", ()=>{ if(mediaRecorder){ mediaRecorder.stop(); mediaRecorder.stream.getTracks().forEach(t=>t.stop()); clearInterval(recTimerId); recTimerId=null; byId("btnStartRec").disabled=false; byId("btnPauseRec").disabled=true; byId("btnResumeRec").disabled=true; byId("btnStopRec").disabled=true; byId("recTimer").textContent="00:00:00"; }});
+byId("audioUpload").addEventListener("change", async e=>{ const f=e.target.files?.[0]; if(!f) return; lastAudioBlob = new Blob([await f.arrayBuffer()],{type:f.type||"audio/*"}); byId("audioPlayer").src = URL.createObjectURL(lastAudioBlob); byId("btnAttachAudio").disabled=false; await renderWaveformFromBlob(lastAudioBlob); });
 byId("btnAttachAudio").addEventListener("click", ()=>{ if(!lastAudioBlob){ alert("No audio to attach."); return; } alert("Audio attached to this entry. Save to persist."); });
 byId("playbackRate").addEventListener("input", e=>{ const r=parseFloat(e.target.value); const ap=byId("audioPlayer"); ap.playbackRate=r; byId("playbackRateVal").textContent = r.toFixed(2)+"×"; });
 
@@ -335,7 +484,7 @@ function ensureAudioCtx(){
   return audioCtx;
 }
 function clearWaveform(){
-  audioBuf=null; selStart=0; selEnd=0; zoom=1.0;
+  audioBuf=null; selStart=0; selEnd=0; zoom=1.0; currentAudioDurationSec=0;
   byId("audDur").textContent="0.000";
   byId("selStart").textContent="0.000"; byId("selEnd").textContent="0.000"; byId("zoomVal").textContent="1.0";
   const c = byId("waveCanvas"); const g=c.getContext("2d"); g.clearRect(0,0,c.width,c.height);
@@ -344,8 +493,9 @@ async function renderWaveformFromBlob(blob){
   try{
     const ac = ensureAudioCtx();
     const ab = await blob.arrayBuffer();
-    const buf = await ac.decodeAudioData(ab.slice(0)); // slice fixes Safari decode bug
-    audioBuf = buf;
+    const buf = await ac.decodeAudioData(ab.slice(0));
+    audioBuf = buf; currentAudioDurationSec = buf.duration||0;
+    byId("audDur").textContent = (audioBuf.duration||0).toFixed(3);
     drawWaveform();
   }catch(err){
     console.warn("Waveform decode failed:", err);
@@ -357,24 +507,19 @@ function drawWaveform(){
   const c = byId("waveCanvas"); const g = c.getContext("2d");
   g.clearRect(0,0,c.width,c.height);
   if(!audioBuf){ return; }
-  const {length, sampleRate, numberOfChannels} = audioBuf;
-  const ch = audioBuf.getChannelData(0); // mono preview
+  const ch = audioBuf.getChannelData(0);
   const dur = audioBuf.duration;
-  byId("audDur").textContent = dur.toFixed(3);
-  // zoom defines pixels per second; base: whole file fits width at zoom=1
   const pxPerSecBase = c.width / dur;
   const pxPerSec = pxPerSecBase * zoom;
   byId("zoomVal").textContent = zoom.toFixed(1);
-  // Draw waveform by sampling
-  const samplesPerPx = sampleRate / pxPerSec;
+  const samplesPerPx = audioBuf.sampleRate / pxPerSec;
   const mid = c.height/2;
   g.strokeStyle = getComputedStyle(document.documentElement).getPropertyValue('--accent') || '#9ec1ff';
   g.lineWidth = 1;
   g.beginPath();
   for (let x=0; x<c.width; x++){
     const idx = Math.floor(x * samplesPerPx);
-    const slice = ch[idx] || 0;
-    const y = mid + slice * (mid-4);
+    const y = mid + (ch[idx]||0) * (mid-4);
     if (x===0) g.moveTo(x,y); else g.lineTo(x,y);
   }
   g.stroke();
@@ -430,7 +575,7 @@ async function trimToSelection(returnBlob=false){
   if (!returnBlob){
     lastAudioBlob = wavBlob;
     byId("audioPlayer").src = URL.createObjectURL(wavBlob);
-    renderWaveformFromBlob(wavBlob);
+    await renderWaveformFromBlob(wavBlob);
     byId("btnAttachAudio").disabled=false;
     alert("Trim applied. Remember to Save Entry.");
   }
@@ -445,35 +590,29 @@ byId("btnDownloadSel").addEventListener("click", async ()=>{
   a.href=url; a.download="selection.wav"; a.click(); URL.revokeObjectURL(url);
 });
 
-// WAV encode (16-bit PCM mono/stereo)
+// WAV encode (16-bit PCM)
 function audioBufferToWavBlob(buffer){
   const numChannels = buffer.numberOfChannels;
   const sampleRate = buffer.sampleRate;
-  const format = 1; // PCM
   const bitsPerSample = 16;
-  // interleave
-  const length = buffer.length * numChannels * 2; // 16-bit
+  const length = buffer.length * numChannels * 2;
   const headerSize = 44;
   const totalSize = headerSize + length;
   const ab = new ArrayBuffer(totalSize);
   const view = new DataView(ab);
-  // RIFF chunk descriptor
   writeString(view, 0, 'RIFF');
   view.setUint32(4, 36 + length, true);
   writeString(view, 8, 'WAVE');
-  // fmt sub-chunk
   writeString(view, 12, 'fmt ');
-  view.setUint32(16, 16, true); // Subchunk1Size
-  view.setUint16(20, format, true);
+  view.setUint32(16, 16, true);
+  view.setUint16(20, 1, true);
   view.setUint16(22, numChannels, true);
   view.setUint32(24, sampleRate, true);
-  view.setUint32(28, sampleRate * numChannels * bitsPerSample/8, true); // byte rate
-  view.setUint16(32, numChannels * bitsPerSample/8, true); // block align
+  view.setUint32(28, sampleRate * numChannels * bitsPerSample/8, true);
+  view.setUint16(32, numChannels * bitsPerSample/8, true);
   view.setUint16(34, bitsPerSample, true);
-  // data sub-chunk
   writeString(view, 36, 'data');
   view.setUint32(40, length, true);
-  // write PCM
   let offset = 44;
   const chData = [];
   for (let ch=0; ch<numChannels; ch++) chData.push(buffer.getChannelData(ch));
@@ -493,7 +632,15 @@ function writeString(view, offset, string){
 // --- Toolbar & Search ---
 byId("btnGenId").addEventListener("click", ()=> byId("entryId").value = generateEntryId());
 byId("btnNewEntry").addEventListener("click", ()=>{ const e=blankEntry(); e.entryId=generateEntryId(); byId("createdAt").value=e.createdAt; writeEntryToUI(e); });
-byId("btnSaveEntry").addEventListener("click", async ()=>{ const e=readEntryFromUI(); try{ await saveEntry(e,lastAudioBlob); alert("Entry saved locally."); }catch(err){ alert("Save failed: "+err); }});
+byId("btnSaveEntry").addEventListener("click", async ()=>{
+  const e=readEntryFromUI();
+  try{
+    await saveEntry(e,lastAudioBlob);
+    alert("Entry saved locally.");
+    // Update clocks after save
+    recalcGenreClocks();
+  }catch(err){ alert("Save failed: "+err); }
+});
 byId("btnRunQC").addEventListener("click", runQC);
 byId("btnExportJSON").addEventListener("click", async ()=>{
   const e = readEntryFromUI();
@@ -511,7 +658,10 @@ byId("importFile").addEventListener("change", async e=>{
   try{
     const pkg = JSON.parse(await f.text()); const entry = pkg.entry || pkg;
     writeEntryToUI(entry);
-    if(pkg.audio?.base64){ const b=atob(pkg.audio.base64); const bytes=new Uint8Array(b.length); for(let i=0;i<b.length;i++) bytes[i]=b.charCodeAt(i); lastAudioBlob = new Blob([bytes],{type:pkg.audio.mimeType||"audio/webm"}); byId("audioPlayer").src=URL.createObjectURL(lastAudioBlob); byId("btnAttachAudio").disabled=false; renderWaveformFromBlob(lastAudioBlob); } else { lastAudioBlob=null; byId("audioPlayer").removeAttribute("src"); clearWaveform(); }
+    if(pkg.audio?.base64){
+      const b=atob(pkg.audio.base64); const bytes=new Uint8Array(b.length); for(let i=0;i<b.length;i++) bytes[i]=b.charCodeAt(i);
+      lastAudioBlob = new Blob([bytes],{type:pkg.audio.mimeType||"audio/webm"}); byId("audioPlayer").src=URL.createObjectURL(lastAudioBlob); byId("btnAttachAudio").disabled=false; await renderWaveformFromBlob(lastAudioBlob);
+    } else { lastAudioBlob=null; byId("audioPlayer").removeAttribute("src"); clearWaveform(); }
     alert("Entry imported; click Save Entry to persist locally.");
   }catch(err){ alert("Import failed: "+err); }
 });
@@ -534,10 +684,29 @@ byId("btnSearch").addEventListener("click", async ()=>{
     btn.addEventListener("click", async ()=>{
       const id = btn.getAttribute("data-load");
       const {entry,audio} = await getEntry(id);
-      if(entry){ writeEntryToUI(entry); if(audio){ lastAudioBlob=audio; byId("audioPlayer").src=URL.createObjectURL(audio); byId("btnAttachAudio").disabled=false; renderWaveformFromBlob(lastAudioBlob); } }
+      if(entry){ writeEntryToUI(entry); if(audio){ lastAudioBlob=audio; byId("audioPlayer").src=URL.createObjectURL(audio); byId("btnAttachAudio").disabled=false; await renderWaveformFromBlob(lastAudioBlob); } }
       const sec1 = document.querySelector('details[data-key="sec1"]'); if (sec1){ sec1.open = true; sec1.querySelector('summary')?.scrollIntoView({behavior:'smooth'}); }
     });
   });
+});
+
+// --- Glossary & Markers ---
+byId("btnAddMarker").addEventListener("click", tagSelection);
+byId("btnClearMarkers").addEventListener("click", ()=>{
+  const tr = byId("transcript");
+  tr.querySelectorAll("mark[data-marker]").forEach(m=>{ const p=m.parentNode; while(m.firstChild) p.insertBefore(m.firstChild,m); p.removeChild(m); });
+});
+
+byId("btnApplyProfile").addEventListener("click", ()=>{
+  const id = byId("profileSelect").value; if(!id){ alert("Choose a profile."); return; }
+  const p = PROFILES.find(x=>x.id===id); if(!p) return;
+  const tr = byId("transcript"); const noteId = `profile-note-${safeKey(id)}`;
+  if(!tr.querySelector(`#${noteId}`)){
+    const note = document.createElement("div");
+    note.id = noteId; note.style.fontSize="12px"; note.style.color="var(--muted)"; note.style.marginTop="8px";
+    note.textContent = `[Profile applied: ${p.id} → ${p.markers.join(", ")}]`;
+    tr.appendChild(note);
+  }
 });
 
 // --- Boot ---
@@ -545,4 +714,5 @@ byId("btnSearch").addEventListener("click", async ()=>{
   await openDB();
   populateUI();
   wireAccordion();
+  recalcGenreClocks();
 })();

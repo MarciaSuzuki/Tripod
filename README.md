@@ -1,29 +1,28 @@
-# Language Archive Collector — Accordion + Waveform + Theme
+# Language Archive Collector — Ideas First
 
-This build adds:
-- **Dual-open** behavior so sections **4) Audio** and **5) Transcript** can be open **at the same time** (you can listen, pause, and transcribe).
-- **Dark/Light theme toggle** (saved in the browser).
-- **Waveform view and trim editing** (client-side, no libraries). Draw waveform, select a region, **Trim to Selection (Replace)** or **Download WAV (Selection)**.
-- **Playback speed slider** (0.5×–1.5×) next to the audio player.
-- **Logo** placed in the header.
+This build moves the **creative step to the front**:
 
-Everything else remains: audio record/upload, tagging with visible marker labels, profiles, QC, search, Entry ID, language code/dialect, consent, local save (IndexedDB), export/import JSON.
+1) **Ideas & Themes** — choose a genre and a prompt (or type your own). See **per‑genre clocks** showing the total recorded hours collected locally.  
+2) **Audio Capture** — record/upload audio, see the **waveform**, select & **trim**, adjust **playback speed**, attach to entry.  
+3) **Transcript & Tagging** — type/paste, highlight spans, **Tag Selection** with marker IDs; apply **Profiles**.  
+4) **Entry & Language Metadata** — language name/code/dialect, genre/register/style.  
+5) **Performance Context** — setting, audience, participation, social constraints.  
+6) **Contributors & Consent** — speaker, collector, consent level.  
+7) **QC Checks** — run validation and fix anything that fails.
 
-## How to use the waveform
-1) Record or Upload audio → click **Show Waveform** (or it draws automatically on new audio).  
-2) **Drag on the waveform** to select a region (see the Selection times).  
-3) **Trim to Selection (Replace)** to make that the new attached audio, or **Download WAV (Selection)** to save the selection as a file.  
-4) Use **Zoom + / Zoom −** if you need more precision.  
-5) If decode fails in your browser for certain codecs, you can still play and attach the audio; waveform may not be available for that file type.
+Other highlights
+- **Dark/Light theme** toggle (persisted).  
+- **Dual-open** behavior for sections **2** and **3** so you can **listen while transcribing**.  
+- **Local save (IndexedDB)**; **Search** by ID/language/genre/etc.; **Export/Import JSON** (packs audio if not too large).  
+- **Logo** in the header and new tagline: **Tripod: Meaning Based AI-Assisted OBT**.
 
-## Theme
-- Toggle with the moon/sun button. Persisted in localStorage.  
-- You can set the default theme by changing `data-theme` on the `<html>` element in `index.html`.
+### Per-genre “clocks”
+- The app stores **audio duration** with each saved entry. The **Ideas & Themes** page sums durations by genre and shows a live **HH:MM:SS** clock for each genre.  
+- Click **Refresh Clocks** to rebuild the totals from your local archive (it will try to estimate durations for older entries by decoding their audio).
 
-## Deploy
-- Replace the files in your GitHub Pages repo (root or `/docs`).  
-- Hard refresh your site.
+### Waveform editing (quick guide)
+1. Record or upload → **Show Waveform** (draws automatically after recording).  
+2. **Drag to select** a region; **Zoom** if needed.  
+3. **Trim to Selection (Replace)** to make the clip your attached audio; or **Download WAV (Selection)**.
 
----
-
-This app follows the Tripod’s **Language Archive** guidance: light, function-first markers and genre/register profiles, with evidence captured DU-by-DU for auditability. 
+This UI follows the Language Archive guidance in your manuscript—**genre coverage** and **light, function‑first tags**—so you elicit authentic speech first and annotate after. 
