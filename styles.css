@@ -1,0 +1,415 @@
+/*
+  Custom stylesheet for the Tripod web app styled in the Shema visual identity.
+  This stylesheet defines a minimalist, clean layout with warm Telha accents
+  (#BE4A01) on soft off‑white surfaces (#F6F5EB). The Montserrat font
+  is applied globally for a cohesive typographic rhythm.
+*/
+
+/* Colour palette variables */
+:root {
+  --telha: #BE4A01;
+  --telha-dark: #a54400;
+  --branco: #F6F5EB;
+  --text-dark: #333333;
+  --text-light: #ffffff;
+  --muted: #666666;
+}
+
+/* Global reset and typography */
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html, body {
+  font-family: 'Montserrat', sans-serif;
+  background-color: var(--branco);
+  color: var(--text-dark);
+  line-height: 1.6;
+  min-height: 100vh;
+}
+
+/* Masthead styling: pattern background with overlay */
+#masthead {
+  background-color: var(--telha);
+  color: var(--text-light);
+  background-image: url('pattern_bg.png');
+  background-size: cover;
+  background-position: center;
+  position: relative;
+}
+
+#masthead .masthead-inner {
+  max-width: 1200px;
+  margin: 0 auto;
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 2rem 1rem;
+}
+
+#masthead .logo {
+  height: 48px;
+  width: auto;
+  flex-shrink: 0;
+}
+
+#masthead .app-title {
+  font-size: 1.8rem;
+  font-weight: 700;
+  color: var(--text-light);
+}
+
+#masthead .app-subtitle {
+  font-size: 0.9rem;
+  color: var(--text-light);
+  opacity: 0.85;
+}
+
+/* Sticky header with summary and actions */
+#app-header {
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  background-color: var(--telha);
+  color: var(--text-light);
+  padding: 0.5rem 1rem;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+#app-header .header-inner {
+  max-width: 1200px;
+  margin: 0 auto;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+#app-header .clock-wrap {
+  font-weight: 600;
+}
+
+#app-header .goal {
+  margin-left: 0.25rem;
+  font-weight: 400;
+  opacity: 0.9;
+}
+
+/* Progress bar styling */
+.progress {
+  background-color: var(--branco);
+  border-radius: 4px;
+  overflow: hidden;
+  height: 6px;
+  width: 120px;
+  margin-top: 0.4rem;
+}
+
+.progress-fill {
+  background-color: var(--text-light);
+  height: 100%;
+  transition: width 0.3s ease;
+}
+
+/* Buttons */
+.btn {
+  cursor: pointer;
+  border: none;
+  border-radius: 4px;
+  font-size: 0.875rem;
+  font-weight: 600;
+  padding: 0.4rem 0.8rem;
+  margin-right: 0.4rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  text-decoration: none;
+}
+
+.btn.primary {
+  background-color: var(--telha);
+  color: var(--text-light);
+}
+.btn.primary:hover,
+.btn.primary:focus {
+  background-color: var(--telha-dark);
+}
+
+.btn.outline {
+  background-color: transparent;
+  color: var(--telha);
+  border: 1px solid var(--telha);
+}
+.btn.outline:hover,
+.btn.outline:focus {
+  background-color: var(--telha);
+  color: var(--text-light);
+}
+
+.btn.subtle {
+  background-color: transparent;
+  color: var(--telha);
+}
+.btn.subtle:hover,
+.btn.subtle:focus {
+  text-decoration: underline;
+}
+
+.btn.danger {
+  background-color: #b23b3b;
+  color: var(--text-light);
+}
+.btn.danger:hover,
+.btn.danger:focus {
+  background-color: #8d2e2e;
+}
+
+/* Status messages used for recording feedback */
+.status-message {
+  margin-top: 0.5rem;
+  font-size: 0.8rem;
+  color: var(--muted);
+}
+
+/* Section toolbar: search & toggles */
+#section-toolbar {
+  background-color: var(--branco);
+  border-bottom: 1px solid #e5e5e5;
+  padding: 0.5rem 1rem;
+}
+
+#section-toolbar .toolbar-inner {
+  max-width: 1200px;
+  margin: 0 auto;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+}
+
+#section-toolbar .search-group {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex: 1 1 300px;
+}
+
+#section-toolbar input[type="search"] {
+  flex: 1;
+  padding: 0.5rem;
+  border: 1px solid #cccccc;
+  border-radius: 4px;
+  font-size: 0.9rem;
+}
+
+#section-toolbar .section-toggles {
+  display: flex;
+  gap: 0.5rem;
+}
+
+/* Main content and panes */
+main#content {
+  max-width: 1200px;
+  margin: 1.5rem auto;
+  padding: 0 1rem;
+}
+
+.pane {
+  background-color: var(--branco);
+  border-radius: 6px;
+  margin-bottom: 1.5rem;
+  padding: 1rem 1.5rem;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+
+.pane-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  background: none;
+  border: none;
+  color: var(--telha);
+  font-size: 1rem;
+  font-weight: 600;
+  padding: 0;
+  cursor: pointer;
+  margin-bottom: 0.5rem;
+}
+
+.pane-body {
+  margin-top: 0.5rem;
+}
+
+/* Grid layouts */
+.ideas-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem;
+}
+
+.genres {
+  flex: 1 1 200px;
+  min-width: 200px;
+}
+
+.ideas-content {
+  flex: 2 1 300px;
+}
+
+.grid-3 {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 1rem;
+}
+
+.grid-2 {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: 1rem;
+}
+
+.pane-flex {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem;
+}
+
+.pane-flex > .pane {
+  flex: 1 1 300px;
+}
+
+/* Forms */
+.field-row,
+.field {
+  margin-bottom: 1rem;
+}
+
+.field label,
+.field-row label {
+  display: block;
+  font-weight: 500;
+  margin-bottom: 0.25rem;
+  color: var(--text-dark);
+}
+
+input,
+select,
+textarea {
+  width: 100%;
+  padding: 0.5rem;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  font-family: inherit;
+  font-size: 0.9rem;
+  background-color: #ffffff;
+}
+
+textarea {
+  resize: vertical;
+}
+
+.input {
+  /* override to match other inputs */
+  width: auto;
+  flex: 1;
+}
+
+/* Genre list */
+.genre-list {
+  list-style: none;
+  padding-left: 0;
+  margin-top: 0.5rem;
+  border: 1px solid #e5e5e5;
+  border-radius: 4px;
+  background-color: #fff;
+}
+
+.genre-item {
+  display: flex;
+  justify-content: space-between;
+  padding: 0.4rem 0.6rem;
+  border-bottom: 1px solid #f0f0f0;
+}
+
+.genre-item:last-child {
+  border-bottom: none;
+}
+
+.hours {
+  color: var(--telha);
+  font-weight: 600;
+}
+
+/* Audio controls */
+.audio-controls {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  align-items: center;
+  margin-bottom: 1rem;
+}
+
+.trim-controls {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  align-items: center;
+  margin-top: 1rem;
+}
+
+.trim-controls label {
+  font-weight: 500;
+  display: flex;
+  flex-direction: column;
+  font-size: 0.85rem;
+  color: var(--text-dark);
+}
+
+.trim-controls input[type="number"] {
+  max-width: 80px;
+}
+
+/* Transcription textarea */
+textarea#transcript {
+  min-height: 150px;
+}
+
+/* Glossary and QC */
+.glossary {
+  list-style: none;
+  padding-left: 0;
+  margin-top: 0.5rem;
+}
+
+.glossary li {
+  padding: 0.25rem 0;
+  border-bottom: 1px solid #f0f0f0;
+}
+
+.glossary li:last-child {
+  border-bottom: none;
+}
+
+.qc {
+  background-color: #f7f7f7;
+  padding: 0.5rem;
+  border-radius: 4px;
+  border: 1px solid #e5e5e5;
+  min-height: 60px;
+  overflow-x: auto;
+}
+
+/* Footer */
+.site-footer {
+  background-color: var(--telha);
+  color: var(--text-light);
+  text-align: center;
+  padding: 1rem 0;
+  margin-top: 2rem;
+}
+
+.site-footer p {
+  font-size: 0.85rem;
+}
