@@ -3,40 +3,46 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Language Archive Collector — MVP</title>
+  <title>Language Archive Collector — Accordion MVP</title>
   <link rel="stylesheet" href="styles.css">
 </head>
 <body>
-  <header class="app-header">
-    <div class="branding">
-      <h1>Language Archive Collector</h1>
-      <p class="tagline">Tripod LA Tagger + Collector • Offline-ready MVP</p>
-    </div>
-    <div class="toolbar">
-      <button id="btnNewEntry" class="primary">New Entry</button>
-      <button id="btnSaveEntry" class="primary">Save Entry</button>
-      <button id="btnRunQC">Run QC Checks</button>
-      <button id="btnExportJSON">Export Entry (JSON)</button>
-      <label class="import-label">
-        Import Entry (JSON)
-        <input type="file" id="importFile" accept="application/json">
-      </label>
-      <button id="btnClearForm" class="danger">Clear Form</button>
-    </div>
-  </header>
+<header class="app-header">
+  <div class="branding">
+    <h1>Language Archive Collector</h1>
+    <p class="tagline">Tripod LA Tagger + Collector • Focused, one activity at a time</p>
+  </div>
+  <div class="toolbar">
+    <button id="btnNewEntry" class="primary">New Entry</button>
+    <button id="btnSaveEntry" class="primary">Save Entry</button>
+    <button id="btnRunQC">Run QC Checks</button>
+    <button id="btnExportJSON">Export Entry (JSON)</button>
+    <label class="import-label">
+      Import Entry (JSON)
+      <input type="file" id="importFile" accept="application/json">
+    </label>
+    <button id="btnClearForm" class="danger">Clear Form</button>
+  </div>
+</header>
 
-  <section class="searchbar">
-    <input id="searchInput" type="search" placeholder="Search entries by ID, language, speaker, collector, genre, or transcript text…" aria-label="Search entries">
-    <button id="btnSearch">Search</button>
-    <div id="searchResults" class="search-results" aria-live="polite"></div>
-  </section>
+<section class="searchbar">
+  <input id="searchInput" type="search" placeholder="Search entries by ID, language, speaker, collector, genre, or transcript text…" aria-label="Search entries">
+  <button id="btnSearch">Search</button>
+  <div class="search-actions">
+    <button id="btnExpandAll" class="ghost">Expand all</button>
+    <button id="btnCollapseAll" class="ghost">Collapse all</button>
+  </div>
+  <div id="searchResults" class="search-results" aria-live="polite"></div>
+</section>
 
-  <main class="layout">
-    <section class="panel left">
-      <h2>1) Entry & Language Metadata</h2>
+<main class="stack">
+  <!-- 1 -->
+  <details class="card accordion" data-key="sec1" open>
+    <summary><span>1) Entry & Language Metadata</span></summary>
+    <div class="content">
       <div class="field-row">
         <label>Entry ID</label>
-        <input id="entryId" type="text" placeholder="Auto-generated (click to regenerate)" title="Entry ID">
+        <input id="entryId" type="text" placeholder="Auto-generated (click to regenerate)">
         <button id="btnGenId" class="small">Generate ID</button>
       </div>
       <div class="field-row">
@@ -46,18 +52,17 @@
       <div class="grid-3">
         <div class="field">
           <label>Language Name<span class="req">*</span></label>
-          <input id="langName" type="text" placeholder="e.g., Kambaata">
+          <input id="langName" type="text" placeholder="e.g., Kawéra">
         </div>
         <div class="field">
-          <label>ISO 639‑3 Code<span class="req">*</span></label>
-          <input id="langCode" type="text" placeholder="e.g., kbp">
+          <label>ISO 639-3 Code<span class="req">*</span></label>
+          <input id="langCode" type="text" placeholder="e.g., xkw">
         </div>
         <div class="field">
           <label>Dialect / Variety<span class="req">*</span></label>
-          <input id="langDialect" type="text" placeholder="e.g., North Valley">
+          <input id="langDialect" type="text" placeholder="e.g., Lower River">
         </div>
       </div>
-
       <div class="grid-3">
         <div class="field">
           <label>Genre<span class="req">*</span></label>
@@ -99,8 +104,13 @@
           </select>
         </div>
       </div>
+    </div>
+  </details>
 
-      <h3>2) Performance Context</h3>
+  <!-- 2 -->
+  <details class="card accordion" data-key="sec2">
+    <summary><span>2) Performance Context</span></summary>
+    <div class="content">
       <div class="grid-3">
         <div class="field">
           <label>Setting</label>
@@ -132,18 +142,23 @@
       </div>
       <div class="field-row">
         <label>Social Constraints / Notes</label>
-        <input id="socialConstraints" type="text" placeholder="e.g., honorifics for elders, purity rules, presence of a crowd">
+        <input id="socialConstraints" type="text" placeholder="e.g., honorifics for elders; large crowd">
       </div>
+    </div>
+  </details>
 
-      <h3>3) Contributors & Consent</h3>
+  <!-- 3 -->
+  <details class="card accordion" data-key="sec3">
+    <summary><span>3) Contributors & Consent</span></summary>
+    <div class="content">
       <div class="grid-2">
         <div class="field">
           <label>Speaker (pseudonym)</label>
-          <input id="speakerName" type="text" placeholder="e.g., Amina">
+          <input id="speakerName" type="text" placeholder="e.g., Maya-K">
         </div>
         <div class="field">
           <label>Speaker Profile</label>
-          <input id="speakerProfile" type="text" placeholder="e.g., F, 50s, central region">
+          <input id="speakerProfile" type="text" placeholder="e.g., F, ~62, respected grandmother">
         </div>
       </div>
       <div class="grid-2">
@@ -161,8 +176,13 @@
           </select>
         </div>
       </div>
+    </div>
+  </details>
 
-      <h2>4) Audio Capture</h2>
+  <!-- 4 -->
+  <details class="card accordion" data-key="sec4">
+    <summary><span>4) Audio Capture</span></summary>
+    <div class="content">
       <div class="recorder">
         <div class="record-controls">
           <button id="btnStartRec" class="record">● Start</button>
@@ -183,35 +203,32 @@
         </div>
         <div class="hint">If your browser blocks recording, use “Upload audio”.</div>
       </div>
-    </section>
+    </div>
+  </details>
 
-    <section class="panel right">
-      <h2>5) Transcript & Tagging</h2>
+  <!-- 5 -->
+  <details class="card accordion" data-key="sec5">
+    <summary><span>5) Transcript & Tagging</span></summary>
+    <div class="content">
       <div class="field-row">
         <label>Transcript (click and type; select text to tag)</label>
       </div>
       <div id="transcript" class="transcript" contenteditable="true" aria-label="Transcript editor"></div>
-
       <div class="tagging-tools">
         <div class="grid-2">
           <div>
             <label for="markerSelect">Add Marker to Selection</label>
-            <select id="markerSelect">
-              <!-- options inserted by JS -->
-            </select>
+            <select id="markerSelect"></select>
             <button id="btnAddMarker">Tag Selection</button>
             <button id="btnClearMarkers" class="danger">Clear All Markers</button>
           </div>
           <div>
             <label for="profileSelect">Select Profile (bundle)</label>
-            <select id="profileSelect">
-              <!-- options inserted by JS -->
-            </select>
+            <select id="profileSelect"></select>
             <button id="btnApplyProfile">Apply Profile Tags</button>
           </div>
         </div>
       </div>
-
       <details class="glossary">
         <summary>Marker Glossary</summary>
         <div class="glossary-controls">
@@ -219,25 +236,24 @@
         </div>
         <div id="glossaryList" class="glossary-list" aria-live="polite"></div>
       </details>
+    </div>
+  </details>
 
-      <h2>6) QC Checks</h2>
+  <!-- 6 -->
+  <details class="card accordion" data-key="sec6">
+    <summary><span>6) QC Checks</span></summary>
+    <div class="content">
       <div id="qcPanel" class="qc-panel">
-        <p class="muted">Click “Run QC Checks” in the toolbar to evaluate this entry.</p>
+        <p class="muted">Click “Run QC Checks” in the top toolbar to evaluate this entry.</p>
       </div>
-    </section>
-  </main>
-
-  <footer class="app-footer">
-    <div>
-      <strong>Notes:</strong> This MVP stores entries locally in your browser using IndexedDB. Export often.
     </div>
-    <div class="refs">
-      <small>
-        Marker families, profiles, and validation ideas follow the Translation Tripod Language Archive spec (light, function-first markers; profiles; consent; QC gates).
-      </small>
-    </div>
-  </footer>
+  </details>
+</main>
 
-  <script src="app.js"></script>
+<footer class="app-footer">
+  <div><strong>Notes:</strong> Entries are saved locally (IndexedDB). Export JSON often.</div>
+</footer>
+
+<script src="app.js"></script>
 </body>
 </html>

@@ -1,39 +1,22 @@
-# Language Archive Collector — MVP
+# Language Archive Collector — Accordion MVP
 
-A single‑page, offline‑friendly web app for collecting **Language Archive (LA)** entries with audio recording, light annotation, controlled metadata, a marker glossary, quick QC checks, and local search.
+This build makes the UI calm and focused: each major section (1–6) is a collapsible accordion. Only one section is open at a time (you can also Expand all / Collapse all). The app remembers the last section you had open.
 
-> Marker families, profiles, and QC ideas are aligned to the *Translation Tripod* specification for the Language Archive (light function‑first markers; profiles; consent & provenance; validation gates). See the manuscript for details.
+## What’s included
+- **Sections 1–6 as accordions** with mutual exclusivity and state memory.
+- **Audio**: record (MediaRecorder) or upload; attach to entry; playback.
+- **Transcript & Tagging**: select text, choose a marker, **Tag Selection**. The marker id shows next to the highlight.
+- **Profiles**: pick a profile to see its marker set and add a note; QC checks for profile coverage.
+- **QC Checks**: one-click checks with hints; automatically opens the QC section.
+- **Search**: by ID, language name/code/dialect, speaker, collector, genre, or transcript text.
+- **Local save**: IndexedDB; **Export/Import JSON** (packs audio if small).
+- **Consent**: public / project-internal / team-only.
 
+## How to use
+1) Open `index.html` in Chrome/Edge/Firefox (or deploy to your Pages site).  
+2) New Entry → fill section **1**, then open **2**, **3**… one at a time.  
+3) In **5**, type the transcript, select a span → choose a marker → **Tag Selection**.  
+4) **Run QC Checks** → fix any FAIL items → **Save Entry**.  
+5) Use **Search** to find and **Load** entries you’ve saved locally.
 
-## Features
-
-- **Language metadata**: name, ISO 639‑3 code, dialect/variety
-- **Entry ID**: auto‑generated (`LA-YYYYMMDD-####`)
-- **Genre / Register / Style** dropdowns (controlled lists)
-- **Performance context**: setting, audience, participation, social constraints
-- **Contributors & consent**: speaker pseudonym & profile, collector, consent level
-- **Audio**: in‑browser recording (MediaRecorder) or file upload; attach to entry
-- **Transcript editor**: contenteditable with **inline markers** using `<mark data-marker="…">`
-- **Marker glossary** with quick insert
-- **Profiles** (bundled markers) with gentle in‑text note
-- **QC checks**: required fields, transcript/audio presence, marker validity, profile coverage
-- **Local storage**: IndexedDB (entries + audio)
-- **Search**: find and load entries by id / language / speaker / collector / genre / transcript text
-- **Import/Export**: JSON package (optionally includes base64 audio if < 20MB)
-
-## How to run
-
-1. Unzip the package.
-2. Open `index.html` in a modern browser (Chrome/Edge/Firefox). No server needed.
-3. Click **New Entry**, fill metadata, record or upload audio, type a transcript.
-4. Select text → choose a marker → **Tag Selection**.
-5. Click **Run QC Checks** and then **Save Entry**.
-6. Use the top search bar to find and reload saved entries.
-7. Use **Export Entry (JSON)** to back up/share; **Import Entry** to restore.
-
-## Notes
-
-- Audio recording requires HTTPS or `file://` permissions depending on browser. If recording is blocked, use **Upload audio**.
-- All data is kept locally in your browser. Export often.
-- This is an MVP intended for field pilots. Extend it as needed (e.g., multi‑speaker sessions, multi‑file attachments, richer QC).
-
+This UI follows the Tripod’s Language Archive guidance: **light, function-first markers** and **profiles** that bundle common patterns by genre/register. See the manuscript for rationale. 
