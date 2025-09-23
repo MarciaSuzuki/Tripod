@@ -21,6 +21,7 @@ document.addEventListener('DOMContentLoaded', () => {
   const resumeBtn = document.getElementById('resumeBtn');
   const stopBtn = document.getElementById('stopBtn');
   const downloadClip = document.getElementById('downloadClip');
+  const saveAudioIdBtn = document.getElementById('saveAudioIdBtn');
   const audioTitle = document.getElementById('audioTitle');
   const recStatus = document.getElementById('recStatus');
   const uploadBtn = document.getElementById('uploadBtn');
@@ -37,17 +38,13 @@ document.addEventListener('DOMContentLoaded', () => {
   const expandAllBtn = document.getElementById('expandAllBtn');
   const collapseAllBtn = document.getElementById('collapseAllBtn');
 
-  const markerSelect = document.getElementById('markerSelect');
-  const applyTagBtn = document.getElementById('applyTagBtn');
   const transcriptEl = document.getElementById('transcript');
+  const copyTranscriptBtn = document.getElementById('copyTranscriptBtn');
   const notesEl = document.getElementById('notes');
 
   const exportJsonBtn = document.getElementById('exportJsonBtn');
   const exportCsvBtn = document.getElementById('exportCsvBtn');
   const importJsonBtn = document.getElementById('importJsonBtn');
-
-  const qcBtn = document.getElementById('qcBtn');
-  const qcOutput = document.getElementById('qcOutput');
 
   const newEntryBtn = document.getElementById('newEntryBtn');
   const saveEntryBtn = document.getElementById('saveEntryBtn');
@@ -57,7 +54,11 @@ document.addEventListener('DOMContentLoaded', () => {
   const languageName = document.getElementById('languageName');
   const languageCode = document.getElementById('languageCode');
   const dialect = document.getElementById('dialect');
-  const style = document.getElementById('style');
+  const styleSelect = document.getElementById('styleSelect');
+  const genreMeta = document.getElementById('genreMeta');
+  const registerSelect = document.getElementById('registerSelect');
+  const settingSelect = document.getElementById('settingSelect');
+  const audienceSelect = document.getElementById('audienceSelect');
   const dateField = document.getElementById('dateField');
 
   // ---------- Helpers ----------
@@ -81,7 +82,7 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 
-  // ---------- Genre & Prompts ----------
+  // ---------- Genre & Prompts (Ideas) ----------
   const GENRES = {
     "Narrative (with dialogue)": [
       "Tell about a time a visitor came and brought surprising news.",
@@ -117,7 +118,8 @@ document.addEventListener('DOMContentLoaded', () => {
     "Blessing / Curse":[
       "Give an example of a blessing said to a respected leader.",
       "Describe a warning or curse when a rule is broken."
-    ]
+    ],
+    "Other": []
   };
   function populateGenreAndPrompts(){
     genreSelect.innerHTML='';
@@ -129,6 +131,13 @@ document.addEventListener('DOMContentLoaded', () => {
     });
     updatePromptSelect();
     renderGenreList(); refreshClockAndProgress();
+    // populate Genre (metadata) with same list
+    genreMeta.innerHTML='';
+    Object.keys(GENRES).forEach(g=>{
+      const opt=document.createElement('option');
+      opt.value=g; opt.textContent=g;
+      genreMeta.appendChild(opt);
+    });
   }
   function updatePromptSelect(){
     const g = genreSelect.value || Object.keys(GENRES)[0];
@@ -160,7 +169,7 @@ document.addEventListener('DOMContentLoaded', () => {
       const expanded = btn.getAttribute('aria-expanded')==='true';
 
       if(!expanded){
-        // We are opening 'key'. Close all others, except if (key and other) are both in allowTogether.
+        // Opening 'key'. Close all others unless both are special (4 & 5).
         document.querySelectorAll('.pane').forEach(p=>{
           if(p===pane) return;
           const k = p.dataset.pane;
@@ -169,7 +178,6 @@ document.addEventListener('DOMContentLoaded', () => {
           const c = p.querySelector('.chev');
           const otherIsSpecial = allowTogether.has(k);
           const currentIsSpecial = allowTogether.has(key);
-          // Keep open only when both are special (4 & 5). Otherwise, close.
           const keepOpen = currentIsSpecial && otherIsSpecial && h.getAttribute('aria-expanded')==='true';
           if(!keepOpen){
             h.setAttribute('aria-expanded','false');
@@ -217,7 +225,7 @@ document.addEventListener('DOMContentLoaded', () => {
   // ---------- Audio capture (MediaRecorder + visual) ----------
   let mediaStream = null;
   const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-  let analyser, sourceNode, rafId, mediaRecorder, chunks=[];
+  let analyser, rafId, mediaRecorder, chunks=[];
   let recStartMs=0, recPausedMs=0, pauseStartMs=0, recTimerId=null;
 
   function drawLiveWave(){
@@ -391,26 +399,62 @@ document.addEventListener('DOMContentLoaded', () => {
     drawStaticFromBuffer(out);
   });
 
-  // ---------- Tagging ----------
-  applyTagBtn.addEventListener('click', ()=>{
-    const tag = markerSelect.value;
-    if(!tag){ alert('Choose a marker first.'); return; }
-    const t = transcriptEl;
-    const s = t.selectionStart, e = t.selectionEnd;
-    if(s===e){ alert('Select some text to tag.'); return; }
-    const before=t.value.slice(0,s), sel=t.value.slice(s,e), after=t.value.slice(e);
-    t.value = before + `[${tag}]${sel}[/${tag}]` + after;
-    const caret = (before + `[${tag}]${sel}[/${tag}]`).length;
-    t.focus(); t.setSelectionRange(caret, caret);
+  // ---------- Copy transcript + assistant link ----------
+  copyTranscriptBtn.addEventListener('click', async ()=>{
+    const text = transcriptEl.value || '';
+    try{
+      await navigator.clipboard.writeText(text);
+      copyTranscriptBtn.textContent = 'Copied!';
+      setTimeout(()=> copyTranscriptBtn.textContent = 'Copy transcript', 1200);
+    }catch{
+      // Fallback: select the text for manual copy
+      transcriptEl.focus(); transcriptEl.select();
+      alert('Press Ctrl+C (Cmd+C on Mac) to copy.');
+    }
+  });
+
+  // ---------- Save audio & create Entry ID ----------
+  function genEntryId(){
+    const d=new Date();
+    const pad=n=>String(n).padStart(2,'0');
+    return `LA-${d.getFullYear()}${pad(d.getMonth()+1)}${pad(d.getDate())}-${pad(d.getHours())}${pad(d.getMinutes())}${pad(d.getSeconds())}-${Math.random().toString(36).slice(2,6)}`;
+  }
+  saveAudioIdBtn.addEventListener('click', ()=>{
+    if(!downloadClip.href || downloadClip.getAttribute('aria-disabled')==='true'){
+      alert('Record or upload audio first, then try again.'); return;
+    }
+    const id = genEntryId();
+    entryId.value = id;
+    if(!dateField.value){
+      const d=new Date(); dateField.value = d.toISOString().slice(0,10);
+    }
+    // Pick extension from current download name or default to .webm
+    const currentName = downloadClip.download || 'clip.webm';
+    const ext = (currentName.split('.').pop() || 'webm').toLowerCase();
+    downloadClip.download = `${id}.${ext}`;
+
+    if(confirm(`Entry ID created: ${id}\nDownload the audio now with this ID as filename?`)){
+      downloadClip.click();
+    } else {
+      alert('You can still download later via the Download button.');
+    }
   });
 
   // ---------- Export / Import ----------
   exportJsonBtn.addEventListener('click', ()=>{
     const obj = {
       entryId: entryId.value.trim()||null,
-      language: { name: languageName.value.trim(), code: languageCode.value.trim(), dialect: dialect.value.trim(), style: style.value.trim() },
+      language: {
+        name: languageName.value.trim(),
+        code: languageCode.value.trim(),
+        dialect: dialect.value.trim(),
+        style: styleSelect.value || ''
+      },
       date: dateField.value || null,
-      genre: genreSelect.value || null,
+      genre: genreMeta.value || null,
+      register: registerSelect.value || null,
+      setting: settingSelect.value || null,
+      audience: audienceSelect.value || null,
       prompt: promptSelect.value || null,
       transcript: transcriptEl.value,
       notes: notesEl.value,
@@ -424,15 +468,12 @@ document.addEventListener('DOMContentLoaded', () => {
     const lines = transcriptEl.value.split(/\n+/).filter(Boolean);
     const rows=[]; let ref=1;
     for(const line of lines){
-      const re=/\[([^\]]+)\](.+?)\[\/\1\]/g; const tags=[]; let clean=line, m;
-      while((m=re.exec(line))) tags.push(m[1]);
-      clean = clean.replace(re,'$2');
-      rows.push({ref:ref++, sentence:clean.trim(), tags:tags.join('|'), notes:notesEl.value.trim()});
+      rows.push({ref:ref++, sentence:line.trim(), notes:notesEl.value.trim()});
     }
-    let csv='ref,sentence,tags,notes\n';
+    let csv='ref,sentence,notes\n';
     rows.forEach(r=>{
       const esc = s=>`"${String(s).replace(/"/g,'""')}"`;
-      csv += [r.ref, esc(r.sentence), esc(r.tags), esc(r.notes)].join(',') + '\n';
+      csv += [r.ref, esc(r.sentence), esc(r.notes)].join(',') + '\n';
     });
     const blob=new Blob([csv],{type:'text/csv'});
     const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download=(entryId.value.trim()||'transcript')+'.csv'; a.click();
@@ -449,11 +490,14 @@ document.addEventListener('DOMContentLoaded', () => {
           languageName.value=obj.language?.name||'';
           languageCode.value=obj.language?.code||'';
           dialect.value=obj.language?.dialect||'';
-          style.value=obj.language?.style||'';
+          styleSelect.value=obj.language?.style||'';
           dateField.value=obj.date||'';
           transcriptEl.value=obj.transcript||'';
           notesEl.value=obj.notes||'';
-          if(obj.genre && GENRES[obj.genre]){ genreSelect.value=obj.genre; updatePromptSelect(); }
+          if(obj.genre){ genreMeta.value=obj.genre; }
+          if(obj.register){ registerSelect.value=obj.register; }
+          if(obj.setting){ settingSelect.value=obj.setting; }
+          if(obj.audience){ audienceSelect.value=obj.audience; }
           if(obj.prompt){
             const opt=[...promptSelect.options].find(o=>o.value===obj.prompt);
             if(opt) promptSelect.value=obj.prompt;
@@ -468,196 +512,6 @@ document.addEventListener('DOMContentLoaded', () => {
     inp.click();
   });
 
-  // ---------- Marker taxonomy (complete list per your reference) ----------
-  const MARKERS = [
-    // Core scene & backgrounding
-    ["LA:BG_opener_past","Opens a story in the past; sets time/background briefly."],
-    ["LA:BG_opener_present","Opens with a general/habitual frame (“as people used to…”)."],
-    ["LA:SCENE_time_anchor","Pins the scene to a time (“that day / during harvest”)."],
-    ["LA:SCENE_place_anchor","Pins the scene to a place (“in the village / at the shore”)."],
-    ["LA:SCENE_switch","Signals a shift to a new scene or location."],
-    ["LA:SCENE_closer","Closes a scene with a natural wrap (“and that’s how it was”)."],
-    ["LA:BACKGROUND_demote","Marks information as non‑event background."],
-    ["LA:FOREGROUND_promote","Brings an event into the main line of action."],
-
-    // Narrative chaining, causation, and peaks
-    ["LA:CHAIN_initial","Starts a chain of events (first push into the action)."],
-    ["LA:CHAIN_medial","Continues the event chain smoothly."],
-    ["LA:CHAIN_final","Closes a chain right before a result or turn."],
-    ["LA:CAUSE_because","Gives the reason for what just happened."],
-    ["LA:PURPOSE_min","States purpose/intent briefly (“in order to…”)."],
-    ["LA:CONDITION_if","Marks a conditional step (“if… then…”)."],
-    ["LA:CONTRAST_local","Contrasts two actors/events in the same scene."],
-    ["LA:CONCESSION_mark","“Even though …” marker before an unexpected outcome."],
-    ["LA:FLASHBACK_open","Opens a brief look backward in time."],
-    ["LA:FLASHBACK_close","Returns from the flashback to the now."],
-    ["LA:PEAK_tempo_rise","Speeds rhythm/packing as the story climbs to the peak."],
-    ["LA:PEAK_TURN","Signals the turning point where the problem flips."],
-    ["LA:RESULT_summary","Sums up the outcome after the peak."],
-    ["LA:AFTERMATH_close","Shows the calm or new state after the crisis."],
-
-    // Speech, dialogue, and interaction
-    ["LA:QUOTE_OPEN_simple","Plain way to start a direct quote."],
-    ["LA:QUOTE_OPEN_honorific","Polite/deferential quote opener to a respected person."],
-    ["LA:QUOTE_OPEN_report","Introduces reported/indirect speech."],
-    ["LA:QUOTE_CLOSE_simple","Plain way to end a quote."],
-    ["LA:QUOTE_CHAIN_next","Continues speech by the same speaker (“and he said…”)."],
-    ["LA:ADDRESS_respect","Vocative or respectful address (“Sir / Teacher”)."],
-    ["LA:Q_YN","Yes/No question form."],
-    ["LA:Q_WH","Content question (“who/what/why/where”)."],
-    ["LA:Q_REASON","“Why?” form that asks for cause."],
-    ["LA:Q_REBUKE","Question used as a rebuke (“What have you done?!”)."],
-    ["LA:COMMAND_plain","Direct imperative."],
-    ["LA:COMMAND_softened","Mitigated imperative (“please / let us…”)."],
-    ["LA:PROHIBIT_neg","Negative command (“do not …”)."],
-    ["LA:PETITION_open","Polite opening of a plea/request."],
-    ["LA:BLESS_form","Blessing formula (“may …”)."],
-    ["LA:CURSE_form","Curse formula (formal denunciation)."],
-    ["LA:OATH_vow","Oath/vow wording (“I pledge / we vow…”)."],
-    ["LA:REPORT_say_then","Narrative “he said/answered” link inside dialogue."],
-
-    // Lists, catalogs, and genealogies
-    ["LA:LIST_enumerator","Clean way to list items (“first/then/and”)."],
-    ["LA:LIST_pairing","Pairs items tightly (“X and Y” as a unit)."],
-    ["LA:LIST_final_conj","The last‑item connector (“… and finally …”)."],
-    ["LA:CATALOG_open","Signals the start of an inventory or catalog."],
-    ["LA:CATALOG_close","Closes a catalog/list naturally."],
-    ["LA:GENE_line","Genealogy line formula (“A fathered B”)."],
-    ["LA:GENE_subclause","Adds details to a genealogy line (age, place, mother)."],
-
-    // Poetry, hymns, and wisdom
-    ["LA:POET_intro_line","Conventional first line for a poem/hymn."],
-    ["LA:POET_parallel-A≈B","Synonymous parallelism (second line restates the first)."],
-    ["LA:POET_parallel-A≠B","Antithetic parallelism (second line contrasts the first)."],
-    ["LA:POET_parallel-A>B","Synthetic/step parallelism (line two advances line one)."],
-    ["LA:POET_refrain","Repeating line/refrain cue."],
-    ["LA:DOXOLOGY","Short praise/closure formula in worship poetry."],
-    ["LA:PROVERB_open","Proverbial introduction (“the wise say…”)."],
-    ["LA:PROVERB_balance","Marks the balanced two‑part structure of a proverb."],
-    ["LA:HYMN_praise_open","Praise opener used in hymns/songs."],
-    ["LA:LAMENT_dirge_open","Lament opening cry."],
-    ["LA:LAMENT_wail_ideo","Wailing/ideophone element common in laments."],
-    ["LA:LAMENT_turn_trust","The “but I trust…” pivot in laments."],
-    ["LA:LAMENT_close","Formal lament closure."],
-
-    // Procedural, legal, and covenantal
-    ["LA:PROC_step_open","Introduces the first step in instructions."],
-    ["LA:PROC_sequence_next","Moves to the next step."],
-    ["LA:PROC_condition","“If X, do Y” step wording."],
-    ["LA:PROC_result","States the expected result of a step."],
-    ["LA:LEGAL_statute_open","Opens a law/statute (“These are the rules…”)."],
-    ["LA:LEGAL_charge","States the charge/accusation."],
-    ["LA:LEGAL_plea","Defendant’s plea/answer form."],
-    ["LA:LEGAL_verdict","Verdict/judgment formula."],
-    ["LA:LEGAL_penalty","Penalty/sanction statement."],
-    ["LA:COVENANT_oath","Covenant oath formula (“We solemnly bind ourselves…”)."],
-    ["LA:COVENANT_sign","Names the sign/token of a covenant."],
-    ["LA:BLESS_priestly","Priestly blessing structure."],
-
-    // Discourse management & cohesion
-    ["LA:PARTICIPANT_reintro","Re‑introduces a known participant after a gap."],
-    ["LA:SWITCH_REF_same","Device that keeps the same subject across clauses."],
-    ["LA:SWITCH_REF_diff","Device that marks subject change cleanly."],
-    ["LA:TOPIC_shift","Signals a change of topic."],
-    ["LA:TOPIC_resume","Returns to a prior topic."],
-    ["LA:ASIDE_parenthetical","Inserts a brief aside/explanatory parenthesis."],
-    ["LA:FOCUS_cleft","Focus marking strategy (clefting or equivalent)."],
-    ["LA:EMPH_exclam","Emphatic exclamation device."],
-    ["LA:SUMMARY_meta","Meta‑summary (“In short / This means…”)."],
-    ["LA:EXEMPLIFY","Introduces an example to clarify a point."],
-    ["LA:EVIDENCE_ground","Presents evidence/grounds for a claim."],
-    ["LA:ATTEMPT_mark","Marks an attempted action."],
-    ["LA:SUCCESS_result","Marks a successful outcome."],
-    ["LA:FAIL_result","Marks an unsuccessful outcome."],
-
-    // Evaluation & closure
-    ["LA:EVAL_moral","States the lesson/moral or evaluative comment."],
-    ["LA:AFTERMATH_1","Shows the community’s response after the peak."],
-    ["LA:CLOSURE_benediction","Ends with a blessing/benediction."]
-  ];
-
-  const BUNDLES = [
-    ["LA:PROFILE_NARR_casual_dialogue","{BG_opener_past, CHAIN_medial, QUOTE_OPEN_simple, QUOTE_CHAIN_next, RESULT_summary}"],
-    ["LA:PROFILE_LAMENT_formal","{LAMENT_dirge_open, POET_parallel-A≈B, LAMENT_turn_trust, LAMENT_close}"],
-    ["LA:PROFILE_LEGAL_statute","{LEGAL_statute_open, PROC_sequence_next, LEGAL_penalty, CLOSURE_benediction}"],
-    ["LA:PROFILE_HYMN_praise","{HYMN_praise_open, POET_refrain, DOXOLOGY}"],
-    ["LA:PROFILE_LIST_genealogy","{CATALOG_open, GENE_line, LIST_final_conj, CATALOG_close}"]
-  ];
-
-  function renderGlossary(){
-    const glossary = document.getElementById('glossaryList');
-    const profileList = document.getElementById('profileList');
-    glossary.innerHTML=''; markerSelect.innerHTML='';
-
-    const GROUPS = [
-      ["Core scene & backgrounding","LA:BG_opener_past"],
-      ["Narrative chaining, causation, and peaks","LA:CHAIN_initial"],
-      ["Speech, dialogue, and interaction","LA:QUOTE_OPEN_simple"],
-      ["Lists, catalogs, and genealogies","LA:LIST_enumerator"],
-      ["Poetry, hymns, and wisdom","LA:POET_intro_line"],
-      ["Procedural, legal, and covenantal","LA:PROC_step_open"],
-      ["Discourse management & cohesion","LA:PARTICIPANT_reintro"],
-      ["Evaluation & closure","LA:EVAL_moral"]
-    ];
-
-    const starts = GROUPS.map(([name,id])=>({name, idx: MARKERS.findIndex(m=>m[0]===id)}))
-                         .filter(g=>g.idx>=0)
-                         .sort((a,b)=>a.idx-b.idx);
-
-    for(let gi=0; gi<starts.length; gi++){
-      const start = starts[gi];
-      const endIdx = (gi+1<starts.length) ? starts[gi+1].idx : MARKERS.length;
-      const h = document.createElement('li'); h.innerHTML = `<strong>${start.name}</strong>`; glossary.appendChild(h);
-      for(let i=start.idx;i<endIdx;i++){
-        const [id,label]=MARKERS[i];
-        const li=document.createElement('li'); li.textContent = `${id} — ${label}`; glossary.appendChild(li);
-        const opt=document.createElement('option'); opt.value=id; opt.textContent=`${id} — ${label}`; markerSelect.appendChild(opt);
-      }
-    }
-
-    profileList.innerHTML='';
-    BUNDLES.forEach(([id,desc])=>{
-      const li=document.createElement('li'); li.textContent=`${id} — ${desc}`; profileList.appendChild(li);
-    });
-  }
-
-  // ---------- QC (basic demo) ----------
-  qcBtn.addEventListener('click', ()=>{
-    const issues=[];
-    if(!entryId.value.trim()) issues.push('• Entry ID is empty.');
-    if(!languageName.value.trim()) issues.push('• Language name is empty.');
-    if(!languageCode.value.trim()) issues.push('• Language code is empty.');
-    if(!dateField.value) issues.push('• Date is missing.');
-    if(!transcriptEl.value.trim()) issues.push('• Transcript is empty.');
-    if(!markerSelect.value) issues.push('• No marker selected.');
-    qcOutput.textContent = issues.length? issues.join('\n') : '✓ All basic QC checks passed.';
-  });
-
-  // ---------- New / Save / Clear ----------
-  newEntryBtn.addEventListener('click', ()=>{
-    entryId.value=`LA-${Date.now()}`; transcriptEl.value=''; notesEl.value='';
-    audioTitle.value=''; player.removeAttribute('src'); playerSide.removeAttribute('src');
-    qcOutput.textContent='';
-    alert('New entry started.');
-  });
-  saveEntryBtn.addEventListener('click', ()=>{
-    const obj = {
-      entryId: entryId.value,
-      language: { name: languageName.value, code: languageCode.value, dialect: dialect.value, style: style.value },
-      date: dateField.value,
-      transcript: transcriptEl.value, notes: notesEl.value,
-      totalSeconds: state.totalSeconds, genreHours: state.genreHours
-    };
-    localStorage.setItem(`entry:${obj.entryId}`, JSON.stringify(obj));
-    alert('Entry saved locally (browser storage).');
-  });
-  clearFormBtn.addEventListener('click', ()=>{
-    if(confirm('Clear current form?')){
-      document.querySelectorAll('input, textarea, select').forEach(el=> el.value = '');
-      transcriptEl.value=''; notesEl.value='';
-    }
-  });
-
   // ---------- Init ----------
   (function init(){
     // Ensure all panes start collapsed
@@ -666,7 +520,6 @@ document.addEventListener('DOMContentLoaded', () => {
       h?.setAttribute('aria-expanded','false'); if(b) b.style.display='none'; if(c) c.textContent='▸';
     });
     populateGenreAndPrompts();
-    renderGlossary();
     refreshClockAndProgress();
     setStickyHeights();
   })();

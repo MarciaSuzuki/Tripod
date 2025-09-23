@@ -100,6 +100,7 @@
 
           <input id="audioTitle" class="input" placeholder="Clip title (optional)" />
           <a id="downloadClip" class="btn outline" download="clip.webm" aria-disabled="true">Download</a>
+          <button id="saveAudioIdBtn" class="btn outline">Save audio &amp; create Entry ID</button>
 
           <span id="recStatus" class="rec-status" aria-live="polite">Idle</span>
           <button id="uploadBtn" class="btn outline" type="button">Upload audio</button>
@@ -131,7 +132,7 @@
         <div class="grid-3">
           <div class="field">
             <label for="entryId">Entry ID</label>
-            <input id="entryId" placeholder="Auto or custom ID" />
+            <input id="entryId" placeholder="Will be auto‑generated when you save audio" />
           </div>
           <div class="field">
             <label for="languageName">Language name</label>
@@ -143,11 +144,74 @@
           </div>
           <div class="field">
             <label for="dialect">Dialect</label>
-            <input id="dialect" placeholder="Dialect (optional)" />
+            <input id="dialect" placeholder="Dialect or Where the speaker grew up" />
           </div>
           <div class="field">
-            <label for="style">Style</label>
-            <input id="style" placeholder="e.g., conversational, ceremonial" />
+            <label for="styleSelect">Style</label>
+            <select id="styleSelect">
+              <option value="">Choose style…</option>
+              <option>Conversational</option>
+              <option>Ceremonial / Formal</option>
+              <option>Teaching / Instruction</option>
+              <option>Legal / Statute</option>
+              <option>Religious / Worship</option>
+              <option>Narrative storytelling</option>
+              <option>Dialogue‑heavy</option>
+              <option>Poetic</option>
+              <option>Lament</option>
+              <option>Praise / Hymn</option>
+              <option>Proverb / Wisdom</option>
+              <option>Other</option>
+            </select>
+          </div>
+          <div class="field">
+            <label for="genreMeta">Genre</label>
+            <select id="genreMeta"></select>
+          </div>
+          <div class="field">
+            <label for="registerSelect">Register</label>
+            <select id="registerSelect">
+              <option value="">Choose register…</option>
+              <option>Casual conversation</option>
+              <option>Ceremonial / formal</option>
+              <option>Teaching / instructional</option>
+              <option>Legal / formal</option>
+              <option>Religious / worship</option>
+              <option>Narrative storytelling</option>
+              <option>Dialogue‑rich</option>
+              <option>Poetic</option>
+              <option>Other</option>
+            </select>
+          </div>
+          <div class="field">
+            <label for="settingSelect">Setting (where the story was told)</label>
+            <select id="settingSelect">
+              <option value="">Choose setting…</option>
+              <option>Home</option>
+              <option>Workplace</option>
+              <option>Market / Village square</option>
+              <option>Temple / Church</option>
+              <option>School</option>
+              <option>Field / Forest</option>
+              <option>Waterfront / Shore</option>
+              <option>Road / Travel</option>
+              <option>Ceremony / Event</option>
+              <option>Other</option>
+            </select>
+          </div>
+          <div class="field">
+            <label for="audienceSelect">Audience</label>
+            <select id="audienceSelect">
+              <option value="">Choose audience…</option>
+              <option>Individual</option>
+              <option>Family</option>
+              <option>Children</option>
+              <option>Elders</option>
+              <option>Community</option>
+              <option>Leaders</option>
+              <option>Mixed group</option>
+              <option>Other</option>
+            </select>
           </div>
           <div class="field">
             <label for="dateField">Date</label>
@@ -161,15 +225,25 @@
     <div class="pane-flex">
       <section class="pane" data-pane="transcript">
         <button class="pane-head" aria-expanded="false">
-          <span>4) Transcription &amp; Tagging</span><span class="chev">▸</span>
+          <span>4) Transcription</span><span class="chev">▸</span>
         </button>
         <div class="pane-body" style="display:none">
-          <div class="field-row">
-            <label for="markerSelect">Marker</label>
-            <select id="markerSelect"></select>
-            <button id="applyTagBtn" class="btn">Apply Tag</button>
+          <div class="callout">
+            <strong>Tagging now happens in the Assistant.</strong>
+            <ol>
+              <li>Transcribe the audio here.</li>
+              <li>Click <em>Copy transcript</em>.</li>
+              <li>Open the Assistant and paste the text: 
+                <a class="link" href="https://chatgpt.com/g/g-68d1d55b7af881919b7fd7f98a062e56-language-archive-tagger" target="_blank" rel="noopener">
+                Language Archive Tagger</a>.
+              </li>
+            </ol>
           </div>
-          <textarea id="transcript" rows="9" placeholder="Type the transcript here. Select text and Apply Tag."></textarea>
+          <textarea id="transcript" rows="10" placeholder="Type the transcript here."></textarea>
+          <div class="field-row">
+            <button id="copyTranscriptBtn" class="btn outline">Copy transcript</button>
+            <a class="btn primary" target="_blank" rel="noopener" href="https://chatgpt.com/g/g-68d1d55b7af881919b7fd7f98a062e56-language-archive-tagger">Open Tagger Assistant</a>
+          </div>
           <div class="field-row">
             <label for="notes">Notes</label>
             <input id="notes" placeholder="Reviewer notes (optional)" />
@@ -195,27 +269,6 @@
       </section>
     </div>
 
-    <!-- 6) Marker Glossary & QC (collapsed by default) -->
-    <section class="pane" data-pane="glossary">
-      <button class="pane-head" aria-expanded="false">
-        <span>6) Marker Glossary, Profiles &amp; QC</span><span class="chev">▸</span>
-      </button>
-      <div class="pane-body" style="display:none">
-        <div class="grid-2">
-          <div>
-            <h3>Marker Glossary</h3>
-            <ul id="glossaryList" class="glossary"></ul>
-          </div>
-          <div>
-            <h3>Optional Bundles</h3>
-            <ul id="profileList" class="glossary"></ul>
-            <h3>Run QC Checks</h3>
-            <button id="qcBtn" class="btn primary">Run QC</button>
-            <pre id="qcOutput" class="qc"></pre>
-          </div>
-        </div>
-      </div>
-    </section>
   </main>
 
   <!-- Footer -->
