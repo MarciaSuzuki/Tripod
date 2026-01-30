@@ -122,17 +122,64 @@
       </div>
     </section>
 
-    <!-- 3) Entry & Language Metadata (collapsed by default) -->
+    <!-- 3) Information (collapsed by default) -->
     <section class="pane" data-pane="meta">
       <button class="pane-head" aria-expanded="false">
-        <span>3) Entry &amp; Language Metadata</span><span class="chev">▸</span>
+        <span>3) Information</span><span class="chev">▸</span>
       </button>
       <div class="pane-body" style="display:none">
+
+        <!-- Storyteller Information -->
+        <h3 class="section-subhead">Storyteller</h3>
         <div class="grid-3">
           <div class="field">
-            <label for="entryId">Entry ID</label>
-            <input id="entryId" placeholder="Will be auto‑generated when you save audio" />
+            <label for="storytellerName">Storyteller name</label>
+            <input id="storytellerName" placeholder="Full name" />
           </div>
+          <div class="field">
+            <label for="storytellerBirthplace">Place of birth</label>
+            <input id="storytellerBirthplace" placeholder="City, region, country" />
+          </div>
+          <div class="field">
+            <label for="storytellerGender">Gender</label>
+            <select id="storytellerGender">
+              <option value="">Choose…</option>
+              <option value="male">Male</option>
+              <option value="female">Female</option>
+            </select>
+          </div>
+          <div class="field">
+            <label for="storytellerAge">Approximate age</label>
+            <input id="storytellerAge" type="number" min="1" max="120" placeholder="Age in years" />
+          </div>
+          <div class="field">
+            <label for="recorderName">Recorder name</label>
+            <input id="recorderName" placeholder="Person recording this session" />
+          </div>
+          <div class="field">
+            <label for="dateField">Date</label>
+            <input id="dateField" type="date" />
+          </div>
+        </div>
+
+        <!-- Consent Recording -->
+        <h3 class="section-subhead">Consent Recording</h3>
+        <div class="consent-block">
+          <p class="consent-text">Please read aloud and record:</p>
+          <blockquote class="consent-script">
+            "I, <strong>[say your name]</strong>, give my voice to the Ready Vessels Project for Bible translation."
+          </blockquote>
+          <div class="consent-controls">
+            <button id="consentRecordBtn" class="btn primary">Record Consent</button>
+            <button id="consentStopBtn" class="btn danger">Stop</button>
+            <span id="consentStatus" class="rec-status">No consent recorded</span>
+          </div>
+          <audio id="consentPlayer" controls></audio>
+        </div>
+
+        <!-- Language Information -->
+        <h3 class="section-subhead">Language</h3>
+        <div class="grid-3">
           <div class="field">
             <label for="languageName">Language name</label>
             <input id="languageName" placeholder="Name" />
@@ -143,7 +190,16 @@
           </div>
           <div class="field">
             <label for="dialect">Dialect</label>
-            <input id="dialect" placeholder="Dialect or Where the speaker grew up" />
+            <input id="dialect" placeholder="Dialect or region" />
+          </div>
+        </div>
+
+        <!-- Entry Metadata -->
+        <h3 class="section-subhead">Entry Details</h3>
+        <div class="grid-3">
+          <div class="field">
+            <label for="entryId">Entry ID</label>
+            <input id="entryId" placeholder="Will be auto‑generated when you save audio" />
           </div>
           <div class="field">
             <label for="styleSelect">Style</label>
@@ -212,11 +268,22 @@
               <option>Other</option>
             </select>
           </div>
-          <div class="field">
-            <label for="dateField">Date</label>
-            <input id="dateField" type="date" />
-          </div>
         </div>
+
+        <!-- Story Summary -->
+        <h3 class="section-subhead">Story Summary</h3>
+        <div class="field full-width">
+          <label for="storySummary">Summarize the story in one sentence</label>
+          <input id="storySummary" placeholder="A brief description of what the story is about…" />
+        </div>
+
+        <!-- Export Outputs -->
+        <h3 class="section-subhead">Export</h3>
+        <div class="export-actions">
+          <button id="exportAllBtn" class="btn primary">Export Audio + Metadata</button>
+          <p class="muted">Downloads the story audio (.wav) and a JSON file with all metadata.</p>
+        </div>
+
       </div>
     </section>
 
