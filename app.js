@@ -1,4 +1,3 @@
-
 document.addEventListener('DOMContentLoaded', () => {
   // ---------- Minimal state ----------
   const state = {
@@ -28,23 +27,13 @@ document.addEventListener('DOMContentLoaded', () => {
   const uploadAudio = document.getElementById('uploadAudio');
 
   const player = document.getElementById('player');
-  const playerSide = document.getElementById('playerSide');
   const waveform = document.getElementById('waveform');
-  const waveformSide = document.getElementById('waveformSide');
   const trimStart = document.getElementById('trimStart');
   const trimEnd = document.getElementById('trimEnd');
   const applyTrimBtn = document.getElementById('applyTrimBtn');
 
   const expandAllBtn = document.getElementById('expandAllBtn');
   const collapseAllBtn = document.getElementById('collapseAllBtn');
-
-  const transcriptEl = document.getElementById('transcript');
-  const copyTranscriptBtn = document.getElementById('copyTranscriptBtn');
-  const notesEl = document.getElementById('notes');
-
-  const exportJsonBtn = document.getElementById('exportJsonBtn');
-  const exportCsvBtn = document.getElementById('exportCsvBtn');
-  const importJsonBtn = document.getElementById('importJsonBtn');
 
   const newEntryBtn = document.getElementById('newEntryBtn');
   const saveEntryBtn = document.getElementById('saveEntryBtn');
@@ -160,30 +149,22 @@ document.addEventListener('DOMContentLoaded', () => {
   window.addEventListener('resize', setStickyHeights);
   window.addEventListener('load', setStickyHeights);
 
-  // ---------- Accordion logic (only 4 & 5 can be open together) ----------
-  const allowTogether = new Set(['transcript','audioSide']);
+  // ---------- Accordion logic ----------
   document.querySelectorAll('.pane-head').forEach(btn=>{
     btn.addEventListener('click', ()=>{
       const pane = btn.closest('.pane');
-      const key = pane.dataset.pane;
       const expanded = btn.getAttribute('aria-expanded')==='true';
 
       if(!expanded){
-        // Opening 'key'. Close all others unless both are special (4 & 5).
+        // Opening this pane, close all others
         document.querySelectorAll('.pane').forEach(p=>{
           if(p===pane) return;
-          const k = p.dataset.pane;
           const h = p.querySelector('.pane-head');
           const b = p.querySelector('.pane-body');
           const c = p.querySelector('.chev');
-          const otherIsSpecial = allowTogether.has(k);
-          const currentIsSpecial = allowTogether.has(key);
-          const keepOpen = currentIsSpecial && otherIsSpecial && h.getAttribute('aria-expanded')==='true';
-          if(!keepOpen){
-            h.setAttribute('aria-expanded','false');
-            if(b) b.style.display='none';
-            if(c) c.textContent='▸';
-          }
+          h.setAttribute('aria-expanded','false');
+          if(b) b.style.display='none';
+          if(c) c.textContent='▸';
         });
       }
 
@@ -234,7 +215,6 @@ document.addEventListener('DOMContentLoaded', () => {
     function loop(){
       analyser.getByteTimeDomainData(dataArray);
       drawWave(waveform, dataArray);
-      drawWave(waveformSide, dataArray);
       rafId = requestAnimationFrame(loop);
     }
     loop();
@@ -281,7 +261,7 @@ document.addEventListener('DOMContentLoaded', () => {
       }
       ctx.stroke();
     };
-    draw(waveform); draw(waveformSide);
+    draw(waveform);
   }
   // Recording clock helpers
   function fmtMS(ms){ const s=Math.max(0,Math.floor(ms/1000)); const m=Math.floor(s/60); const ss=String(s%60).padStart(2,'0'); return `${m}:${ss}`; }
@@ -318,7 +298,7 @@ document.addEventListener('DOMContentLoaded', () => {
         stopClock();
         const blob = new Blob(chunks, {type:'audio/webm'});
         const url = URL.createObjectURL(blob);
-        player.src=url; playerSide.src=url;
+        player.src=url;
         downloadClip.href=url;
         downloadClip.download=(audioTitle.value?.trim()||'clip')+'.webm';
         downloadClip.removeAttribute('aria-disabled');
@@ -348,7 +328,7 @@ document.addEventListener('DOMContentLoaded', () => {
   uploadAudio.addEventListener('change', async (e)=>{
     const file = e.target.files?.[0]; if(!file) return;
     const url = URL.createObjectURL(file);
-    player.src=url; playerSide.src=url;
+    player.src=url;
     downloadClip.href=url; downloadClip.download=file.name || 'clip';
     downloadClip.removeAttribute('aria-disabled');
     recStatus.textContent='Loaded file';
@@ -392,25 +372,11 @@ document.addEventListener('DOMContentLoaded', () => {
     }
     const wav = bufferToWav(out);
     const url = URL.createObjectURL(wav);
-    player.src=url; playerSide.src=url;
+    player.src=url;
     downloadClip.href=url; downloadClip.download=(audioTitle.value?.trim()||'clip')+'_trim.wav';
     state.currentBuffer = out;
     trimStart.value='0'; trimEnd.value=out.duration.toFixed(2);
     drawStaticFromBuffer(out);
-  });
-
-  // ---------- Copy transcript + assistant link ----------
-  copyTranscriptBtn.addEventListener('click', async ()=>{
-    const text = transcriptEl.value || '';
-    try{
-      await navigator.clipboard.writeText(text);
-      copyTranscriptBtn.textContent = 'Copied!';
-      setTimeout(()=> copyTranscriptBtn.textContent = 'Copy transcript', 1200);
-    }catch{
-      // Fallback: select the text for manual copy
-      transcriptEl.focus(); transcriptEl.select();
-      alert('Press Ctrl+C (Cmd+C on Mac) to copy.');
-    }
   });
 
   // ---------- Save audio & create Entry ID ----------
@@ -438,78 +404,6 @@ document.addEventListener('DOMContentLoaded', () => {
     } else {
       alert('You can still download later via the Download button.');
     }
-  });
-
-  // ---------- Export / Import ----------
-  exportJsonBtn.addEventListener('click', ()=>{
-    const obj = {
-      entryId: entryId.value.trim()||null,
-      language: {
-        name: languageName.value.trim(),
-        code: languageCode.value.trim(),
-        dialect: dialect.value.trim(),
-        style: styleSelect.value || ''
-      },
-      date: dateField.value || null,
-      genre: genreMeta.value || null,
-      register: registerSelect.value || null,
-      setting: settingSelect.value || null,
-      audience: audienceSelect.value || null,
-      prompt: promptSelect.value || null,
-      transcript: transcriptEl.value,
-      notes: notesEl.value,
-      genresHours: state.genreHours,
-      totalSeconds: state.totalSeconds
-    };
-    const blob = new Blob([JSON.stringify(obj,null,2)], {type:'application/json'});
-    const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download=(obj.entryId||'entry')+'.json'; a.click();
-  });
-  exportCsvBtn.addEventListener('click', ()=>{
-    const lines = transcriptEl.value.split(/\n+/).filter(Boolean);
-    const rows=[]; let ref=1;
-    for(const line of lines){
-      rows.push({ref:ref++, sentence:line.trim(), notes:notesEl.value.trim()});
-    }
-    let csv='ref,sentence,notes\n';
-    rows.forEach(r=>{
-      const esc = s=>`"${String(s).replace(/"/g,'""')}"`;
-      csv += [r.ref, esc(r.sentence), esc(r.notes)].join(',') + '\n';
-    });
-    const blob=new Blob([csv],{type:'text/csv'});
-    const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download=(entryId.value.trim()||'transcript')+'.csv'; a.click();
-  });
-  importJsonBtn.addEventListener('click', ()=>{
-    const inp=document.createElement('input'); inp.type='file'; inp.accept='application/json';
-    inp.onchange=e=>{
-      const f=e.target.files?.[0]; if(!f) return;
-      const r=new FileReader();
-      r.onload=()=>{
-        try{
-          const obj=JSON.parse(r.result);
-          entryId.value=obj.entryId||'';
-          languageName.value=obj.language?.name||'';
-          languageCode.value=obj.language?.code||'';
-          dialect.value=obj.language?.dialect||'';
-          styleSelect.value=obj.language?.style||'';
-          dateField.value=obj.date||'';
-          transcriptEl.value=obj.transcript||'';
-          notesEl.value=obj.notes||'';
-          if(obj.genre){ genreMeta.value=obj.genre; }
-          if(obj.register){ registerSelect.value=obj.register; }
-          if(obj.setting){ settingSelect.value=obj.setting; }
-          if(obj.audience){ audienceSelect.value=obj.audience; }
-          if(obj.prompt){
-            const opt=[...promptSelect.options].find(o=>o.value===obj.prompt);
-            if(opt) promptSelect.value=obj.prompt;
-          }
-          state.genreHours=obj.genresHours||state.genreHours;
-          state.totalSeconds=obj.totalSeconds||state.totalSeconds;
-          renderGenreList(); refreshClockAndProgress();
-        }catch{ alert('Invalid JSON file.'); }
-      };
-      r.readAsText(f);
-    };
-    inp.click();
   });
 
   // ---------- Init ----------
