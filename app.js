@@ -5,6 +5,7 @@ document.addEventListener('DOMContentLoaded', () => {
     genreHours: {},
     goalSeconds: 100*3600,
     currentBuffer: null,
+    consentBuffer: null,
   };
 
   // ---------- DOM refs ----------
@@ -39,6 +40,20 @@ document.addEventListener('DOMContentLoaded', () => {
   const saveEntryBtn = document.getElementById('saveEntryBtn');
   const clearFormBtn = document.getElementById('clearFormBtn');
 
+  // Storyteller fields
+  const storytellerName = document.getElementById('storytellerName');
+  const storytellerBirthplace = document.getElementById('storytellerBirthplace');
+  const storytellerGender = document.getElementById('storytellerGender');
+  const storytellerAge = document.getElementById('storytellerAge');
+  const recorderName = document.getElementById('recorderName');
+
+  // Consent recording
+  const consentRecordBtn = document.getElementById('consentRecordBtn');
+  const consentStopBtn = document.getElementById('consentStopBtn');
+  const consentStatus = document.getElementById('consentStatus');
+  const consentPlayer = document.getElementById('consentPlayer');
+
+  // Entry fields
   const entryId = document.getElementById('entryId');
   const languageName = document.getElementById('languageName');
   const languageCode = document.getElementById('languageCode');
@@ -49,6 +64,10 @@ document.addEventListener('DOMContentLoaded', () => {
   const settingSelect = document.getElementById('settingSelect');
   const audienceSelect = document.getElementById('audienceSelect');
   const dateField = document.getElementById('dateField');
+  const storySummary = document.getElementById('storySummary');
+
+  // Export
+  const exportAllBtn = document.getElementById('exportAllBtn');
 
   // ---------- Helpers ----------
   function formatHMS(totalSec){
@@ -263,6 +282,27 @@ document.addEventListener('DOMContentLoaded', () => {
     };
     draw(waveform);
   }
+
+  // ---------- WAV encoder (reusable) ----------
+  function bufferToWav(buff){
+    const nch=buff.numberOfChannels, len=buff.length*nch*2+44;
+    const buffer=new ArrayBuffer(len); const view=new DataView(buffer);
+    let offset=0;
+    const writeStr=s=>{ for(let i=0;i<s.length;i++) view.setUint8(offset+i, s.charCodeAt(i)); offset+=s.length; };
+    writeStr('RIFF'); view.setUint32(offset, 36+buff.length*nch*2, true); offset+=4; writeStr('WAVE');
+    writeStr('fmt '); view.setUint32(offset,16,true); offset+=4; view.setUint16(offset,1,true); offset+=2; view.setUint16(offset,nch,true); offset+=2;
+    view.setUint32(offset,buff.sampleRate,true); offset+=4; view.setUint32(offset,buff.sampleRate*nch*2,true); offset+=4; view.setUint16(offset,nch*2,true); offset+=2; view.setUint16(offset,16,true); offset+=2;
+    writeStr('data'); view.setUint32(offset,buff.length*nch*2,true); offset+=4;
+    let idx=0;
+    for(let i=0;i<buff.length;i++){
+      for(let ch=0; ch<nch; ch++){
+        const s = Math.max(-1, Math.min(1, buff.getChannelData(ch)[i]));
+        view.setInt16(offset+idx, s<0 ? s*0x8000 : s*0x7FFF, true); idx+=2;
+      }
+    }
+    return new Blob([view], {type:'audio/wav'});
+  }
+
   // Recording clock helpers
   function fmtMS(ms){ const s=Math.max(0,Math.floor(ms/1000)); const m=Math.floor(s/60); const ss=String(s%60).padStart(2,'0'); return `${m}:${ss}`; }
   function startClock(){
@@ -352,24 +392,6 @@ document.addEventListener('DOMContentLoaded', () => {
       const src = state.currentBuffer.getChannelData(ch).subarray(Math.floor(start*sr), Math.floor(end*sr));
       data.set(src);
     }
-    // encode wav
-    function bufferToWav(buff){
-      const nch=buff.numberOfChannels, len=buff.length*nch*2+44;
-      const buffer=new ArrayBuffer(len); const view=new DataView(buffer);
-      let offset=0; const writeStr=s=>{ for(let i=0;i<s.length;i++) view.setUint8(offset+i, s.charCodeAt(i)); offset+=s.length; };
-      writeStr('RIFF'); view.setUint32(offset, 36+buff.length*nch*2, true); offset+=4; writeStr('WAVE');
-      writeStr('fmt '); view.setUint32(offset,16,true); offset+=4; view.setUint16(offset,1,true); offset+=2; view.setUint16(offset,nch,true); offset+=2;
-      view.setUint32(offset,buff.sampleRate,true); offset+=4; view.setUint32(offset,buff.sampleRate*nch*2,true); offset+=4; view.setUint16(offset,nch*2,true); offset+=2; view.setUint16(offset,16,true); offset+=2;
-      writeStr('data'); view.setUint32(offset,buff.length*nch*2,true); offset+=4;
-      let idx=0;
-      for(let i=0;i<buff.length;i++){
-        for(let ch=0; ch<nch; ch++){
-          const s = Math.max(-1, Math.min(1, buff.getChannelData(ch)[i]));
-          view.setInt16(offset+idx, s<0 ? s*0x8000 : s*0x7FFF, true); idx+=2;
-        }
-      }
-      return new Blob([view], {type:'audio/wav'});
-    }
     const wav = bufferToWav(out);
     const url = URL.createObjectURL(wav);
     player.src=url;
@@ -377,6 +399,47 @@ document.addEventListener('DOMContentLoaded', () => {
     state.currentBuffer = out;
     trimStart.value='0'; trimEnd.value=out.duration.toFixed(2);
     drawStaticFromBuffer(out);
+  });
+
+  // ---------- Consent Recording ----------
+  let consentMediaRecorder = null;
+  let consentChunks = [];
+  let consentStream = null;
+
+  consentRecordBtn.addEventListener('click', async ()=>{
+    try{
+      consentStream = await navigator.mediaDevices.getUserMedia({audio:true});
+      consentChunks = [];
+      consentMediaRecorder = new MediaRecorder(consentStream);
+      consentMediaRecorder.start();
+      consentStatus.textContent = 'Recording consent…';
+      consentStatus.classList.add('rec');
+      consentRecordBtn.disabled = true;
+
+      consentMediaRecorder.ondataavailable = (e)=>{
+        if(e.data && e.data.size>0) consentChunks.push(e.data);
+      };
+      consentMediaRecorder.onstop = async ()=>{
+        consentStream.getTracks().forEach(t=>t.stop());
+        consentStatus.classList.remove('rec');
+        consentRecordBtn.disabled = false;
+
+        const blob = new Blob(consentChunks, {type:'audio/webm'});
+        const url = URL.createObjectURL(blob);
+        consentPlayer.src = url;
+        consentStatus.textContent = 'Consent recorded ✓';
+
+        // Decode for export
+        const ab = await blob.arrayBuffer();
+        state.consentBuffer = await audioCtx.decodeAudioData(ab);
+      };
+    }catch(err){
+      alert('Microphone access failed: '+err.message);
+    }
+  });
+
+  consentStopBtn.addEventListener('click', ()=>{
+    try{ consentMediaRecorder?.stop(); }catch{}
   });
 
   // ---------- Save audio & create Entry ID ----------
@@ -404,6 +467,87 @@ document.addEventListener('DOMContentLoaded', () => {
     } else {
       alert('You can still download later via the Download button.');
     }
+  });
+
+  // ---------- Export All (Audio + Metadata JSON) ----------
+  exportAllBtn.addEventListener('click', ()=>{
+    // Validate
+    if(!state.currentBuffer){
+      alert('No audio recorded or uploaded. Please capture audio first.'); return;
+    }
+
+    const id = entryId.value.trim() || genEntryId();
+    if(!entryId.value.trim()) entryId.value = id;
+
+    // Build metadata object
+    const metadata = {
+      entryId: id,
+      exportedAt: new Date().toISOString(),
+      storyteller: {
+        name: storytellerName.value.trim() || null,
+        birthplace: storytellerBirthplace.value.trim() || null,
+        gender: storytellerGender.value || null,
+        approximateAge: storytellerAge.value ? parseInt(storytellerAge.value) : null
+      },
+      recorder: {
+        name: recorderName.value.trim() || null
+      },
+      consentRecorded: !!state.consentBuffer,
+      language: {
+        name: languageName.value.trim() || null,
+        code: languageCode.value.trim() || null,
+        dialect: dialect.value.trim() || null
+      },
+      entry: {
+        date: dateField.value || null,
+        style: styleSelect.value || null,
+        genre: genreMeta.value || null,
+        register: registerSelect.value || null,
+        setting: settingSelect.value || null,
+        audience: audienceSelect.value || null,
+        prompt: promptSelect.value || null
+      },
+      storySummary: storySummary.value.trim() || null,
+      audio: {
+        durationSeconds: state.currentBuffer ? state.currentBuffer.duration.toFixed(2) : null,
+        sampleRate: state.currentBuffer ? state.currentBuffer.sampleRate : null,
+        channels: state.currentBuffer ? state.currentBuffer.numberOfChannels : null,
+        filename: `${id}.wav`
+      }
+    };
+
+    // Download audio as WAV
+    const wavBlob = bufferToWav(state.currentBuffer);
+    const wavUrl = URL.createObjectURL(wavBlob);
+    const audioLink = document.createElement('a');
+    audioLink.href = wavUrl;
+    audioLink.download = `${id}.wav`;
+    audioLink.click();
+
+    // Download metadata as JSON
+    setTimeout(()=>{
+      const jsonBlob = new Blob([JSON.stringify(metadata, null, 2)], {type:'application/json'});
+      const jsonUrl = URL.createObjectURL(jsonBlob);
+      const jsonLink = document.createElement('a');
+      jsonLink.href = jsonUrl;
+      jsonLink.download = `${id}.json`;
+      jsonLink.click();
+    }, 500);
+
+    // Also export consent audio if available
+    if(state.consentBuffer){
+      setTimeout(()=>{
+        const consentWav = bufferToWav(state.consentBuffer);
+        const consentUrl = URL.createObjectURL(consentWav);
+        const consentLink = document.createElement('a');
+        consentLink.href = consentUrl;
+        consentLink.download = `${id}_consent.wav`;
+        consentLink.click();
+      }, 1000);
+    }
+
+    alert(`Exported:\n• ${id}.wav (story audio)\n• ${id}.json (metadata)` + 
+          (state.consentBuffer ? `\n• ${id}_consent.wav (consent recording)` : ''));
   });
 
   // ---------- Init ----------
