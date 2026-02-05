@@ -9,3 +9,4 @@
 - The previous “Notes: entries are saved locally …” line is removed.
 
 Everything else remains as in the last build (ideas-first flow, per‑genre clocks, waveform trim, CSV export of transcript sentences, search, QC, etc.).
+
